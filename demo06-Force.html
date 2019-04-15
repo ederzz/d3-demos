@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        .chart {
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-force.v1.min.js"></script>
+    <script>
+        const width = 600
+        const height = 600
+        const colors = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
+
+        const svg = d3.select('body')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('class', 'chart')
+
+        const nodes = [
+            { name: "GuiLin" },
+            { name: "GuangZhou" },
+            { name: "XiaMen" },
+            { name: "HangZhou" },
+            { name: "ShangHai" },
+            { name: "QingDao" },
+            { name: "TianJin" },
+            { name: "BeiJing" },
+            { name: "ChangChun" },
+            { name: "XiAn" },
+            { name: "WuluMuQi" },
+            { name: "LaSa" },
+            { name: "ChengDu" }];
+
+        const edges = [
+            { source: 0, target: 1 },
+            { source: 1, target: 2 },
+            { source: 2, target: 3 },
+            { source: 3, target: 4 },
+            { source: 4, target: 5 },
+            { source: 5, target: 6 },
+            { source: 6, target: 7 },
+            { source: 7, target: 8 },
+            { source: 8, target: 9 },
+            { source: 9, target: 10 },
+            { source: 10, target: 11 },
+            { source: 11, target: 12 },
+            { source: 12, target: 0 }]
+
+        const force = d3.forceSimulation(nodes)
+            .force("charge", d3.forceManyBody())
+            .force("link", d3.forceLink(edges))
+            .force("center", d3.forceCenter())
+
+        svg.selectAll('line')
+            .data(edges)
+            .enter()
+            .append('line')
+            .style('stroke', '#ccc')
+            .style('stroke-width', 1)
+
+        svg.selectAll('circle')
+            .data(nodes)
+            .enter()
+            .append('circle')
+            .attr('r', 10)
+            .style("fill", function (d, i) {
+                return colors[i]
+            })
+            .call(d3.drag().on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended))
+
+        function dragstarted(d) {
+            if (!d3.event.active) force.alphaTarget(0.3).restart();//设置目标α
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) force.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        function ticked() {
+            svg_links.attr("x1", function (d) { return d.source.x; })
+                .attr("y1", function (d) { return d.source.y; })
+                .attr("x2", function (d) { return d.target.x; })
+                .attr("y2", function (d) { return d.target.y; });
+
+            svg_nodes.attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+            svg_texts.attr("x", function (d) { return d.x; })
+                .attr("y", function (d) { return d.y; });
+        }
+            // .call(force.drag)
+    </script>
+</body>
+
+</html>
