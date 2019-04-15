@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <div class="one">
+        <p>hello world1</p>
+        <p>hello world2</p>
+        <p>hello world3</p>
+    </div>
+    <div class="two">
+        <p>hello world1</p>
+        <p>hello world2</p>
+        <p>hello world3</p>
+    </div>
+    <div class="three">
+        <p>hello world1</p>
+        <p>hello world2</p>
+        <p>hello world3</p>
+    </div>
+
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        // 使用data函数绑定数据并使用
+        d3.select('.one').selectAll('p')
+            .data([
+                'Studying the first day.',
+                'Studying the second day.',
+                'Studying the third day.',
+            ])
+            .text(d => d)
+        
+        // 数组长度和元素个数不一致:
+        // 1.数组长度大于元素个数
+        const p = d3.select('.two').selectAll('p')
+            .data([
+                'Studying the first day.',
+                'Studying the second day.',
+                'Studying the third day.',
+                'Studying the four day.',
+            ])
+        p.text(d => d)
+            .style('color', 'green')
+        p.enter()
+            .append('p')
+            .text(d => d)
+            .style('color', 'green')
+
+        // 2.数组长度小于元素个数：
+        const p1 = d3.select('.three').selectAll('p')
+            .data([
+                'Studying the first day.',
+                'Studying the second day.'
+            ])
+            .text(d => d)
+            .style('color', 'blue')
+        p1.exit().remove() // 删掉多余元素
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .chart {
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <script src="./utils.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        // TODO: 坐标轴名称，style美化
+        const chartW = 600
+        const chartH = 300
+
+        const data = [
+            {
+                name: 'Mon',
+                value: 10
+            },
+            {
+                name: 'Tues',
+                value: 22
+            },
+            {
+                name: 'Wed',
+                value: 45
+            },
+            {
+                name: 'Thur',
+                value: 67
+            },
+            {
+                name: 'Fri',
+                value: 36
+            },
+            {
+                name: 'Sad',
+                value: 88
+            },
+            {
+                name: 'Sun',
+                value: 66
+            }
+        ]
+
+        // 比例尺作用：数据映射，domain定义输入域，range定义输出域
+        // 分段比例尺
+        const xAxisScale = d3.scaleBand()
+            .range([0, chartH - 40])
+            .domain(data.map(d => d.name))
+            .paddingInner(0.1)
+            .paddingOuter(0.2)
+        
+        // 线性比例尺:
+        const yAxisScale = d3.scaleLinear()
+            .range([0, chartW - 40])
+            .domain([0, d3.max(data, function (d) {
+                return d.value
+            })])
+
+
+        const barWidth = xAxisScale.bandwidth()
+
+        const svg = d3.select('body')
+            .append('svg')
+            .attr('width', chartW)
+            .attr('height', chartH)
+            .attr('class', 'chart')
+            
+        svg.selectAll('rect')
+            .data(data)
+            .enter()
+            .append('rect')
+            .attr('x', 40)
+            .attr('y', d => xAxisScale(d.name))
+            .attr('width', d => yAxisScale(d.value))
+            .attr('height', barWidth)
+            .attr('fill', 'steelblue')
+            .on('mouseover', function () {
+                d3.select(this)
+                    .attr('fill', LightenDarkenColor('#4682b4', 20))
+            })
+            .on('mouseout', function () {
+                d3.select(this)
+                    .transition()
+                    .duration(500)
+                    .attr('fill', 'steelblue')
+            })
+
+        // 坐标轴：将比例尺转化为坐标轴标尺
+        const xAxis = d3.axisLeft(xAxisScale)
+        const yAxis = d3.axisBottom(yAxisScale)
+        
+        svg.append('g')
+            .call(xAxis)
+            .attr('transform', 'translate(40, 0)')
+        
+        svg.append('g')
+            .call(yAxis)
+            .attr('transform', 'translate(40, 260)')
+        
+        svg.append('g')
+            .selectAll('text')
+            .data(data)
+            .enter()
+            .append('text')
+            .attr('x', d => yAxisScale(d.value) + 30)
+            .attr('y', d => xAxisScale(d.name))
+            .attr('text-anchor', 'end')
+            .text(d => d.value)
+            .attr('font-size', 14)
+            .attr('fill', 'white')
+            .attr('dy', barWidth / 2 + 7)
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        .pie-chart {
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const data = [
+            22, 45, 12, 54, 29, 77
+        ]
+        const arc = d3.arc()
+            .innerRadius(50)
+            .outerRadius(100)
+        const svg = d3.select('body')
+            .append('svg')
+            .attr('class', 'pie-chart')
+            .attr('width', 600)
+            .attr('height', 600)
+        const pieData = d3.pie()(data)
+
+        const arcs = svg.selectAll('g')
+            .data(pieData)
+            .enter()
+            .append('g')
+        
+        arcs.append('path')
+            .attr('fill', 'red')
+            .attr('d', function (d) {
+                console.log(d)
+                console.log(arc(d))
+                return arc(d)
+            })
+    </script>
+</body>
+</html>

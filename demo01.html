@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <p>hello world1</p>
+    <p>hello world2</p>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        // 选取dom中的元素并设置css属性，类似jQuery
+        const p = d3.selectAll('p').text('study d3.js.')
+        p.style('color', 'green')
+        p.style('font-size', '18px')
+    </script>
+</body>
+</html>
