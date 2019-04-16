@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta http-equiv='X-UA-Compatible' content='ie=edge'>
     <title>Document</title>
     <style>
         body {
@@ -15,11 +15,18 @@
         .pie-chart {
             margin: auto;
         }
+
+        polyline{
+            opacity: .3;
+            stroke: black;
+            stroke-width: 2px;
+            fill: none;
+        }
     </style>
 </head>
 <body>
-    
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src='https://d3js.org/d3.v5.min.js'></script>
+    <script src='https://d3js.org/d3-scale-chromatic.v1.min.js'></script>
     <script>
         const data = [
             22, 45, 12, 54, 29, 77
@@ -27,12 +34,19 @@
 
         const width = 600
         const height = 600
-        const colors = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
+        const colors = d3.schemePastel2
+        const radius = Math.min(width, height) / 2
 
         // 通过arc函数生成原型或圆环
         const arc = d3.arc()
-            .innerRadius(0)
+            .innerRadius(100)
             .outerRadius(200)
+            .cornerRadius(5)
+            .padAngle(Math.PI / 140)
+
+        var outerArc = d3.arc()
+            .innerRadius(200)
+            .outerRadius(280)
             .cornerRadius(5)
             .padAngle(Math.PI / 140)
 
@@ -60,12 +74,49 @@
 
         arcs.append('text')
             .attr('transform', d => {
+                const pos = outerArc.centroid(d)
+                pos[0] = radius * 0.9 * (midAngle(d) < Math.PI ? 1 : -1)
+
                 // 找到图形中间点
-                return `translate(${ arc.centroid(d) })`
+                return `translate(${ pos })`
             })
-            .attr('fill', 'white')
+            // .attr('fill', 'white')
+            .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
             .text(d => d.value)
+
+        const polyline = svg.append('g')
+            .attr('class', 'lines')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+            .selectAll('polyline')
+            .data(pieData)
+
+        polyline.enter()
+            .append('polyline')
+            .attr('points', d => {
+                const pos = outerArc.centroid(d)
+                pos[0] = radius * 0.82 * (midAngle(d) < Math.PI ? 1 : -1)
+                console.log(pos[0])
+                return [
+                    arc.centroid(d),
+                    outerArc.centroid(d),
+                    pos
+                ]
+            })
+
+        function midAngle(d){
+            return d.startAngle + (d.endAngle - d.startAngle)/2
+        }
+	
+        
+        // d3.interpolate
+        // 动态变化
+        // text dx dy
+        // 计算角度
+        // 颜色值
+        // polyline.exit()
+        //     .remove();
+        // 画扇形的原点
     </script>
 </body>
 </html>
