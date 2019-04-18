@@ -22,16 +22,19 @@
             stroke-width: 2px;
             fill: none;
         }
+
+        .change-btn {
+            position: fixed;
+            left: 100px;
+            top: 100px;
+        }
     </style>
 </head>
 <body>
+    <div class="change-btn">CHANGE DATA</div>
     <script src='https://d3js.org/d3.v5.min.js'></script>
     <script src='https://d3js.org/d3-scale-chromatic.v1.min.js'></script>
     <script>
-        const data = [
-            22, 45, 12, 54, 29, 77
-        ]
-
         const width = 600
         const height = 600
         const radius = Math.min(width, height) / 2
@@ -45,10 +48,10 @@
 
         // 通过arc函数生成原型或圆环
         const arc = d3.arc()
-            .innerRadius(innerRadius)
-            .outerRadius(outerRadius)
-            .cornerRadius(cornerRadius)
-            .padAngle(padAngle)
+                .innerRadius(innerRadius)
+                .outerRadius(outerRadius)
+                .cornerRadius(cornerRadius)
+                .padAngle(padAngle)
 
         // 计算折线拐点的圆环
         const outerArc = d3.arc()
@@ -62,61 +65,141 @@
             .attr('class', 'pie-chart')
             .attr('width', width)
             .attr('height', height)
-
-        // 通过pie函数生成饼图或环形图所需要数据
-        const pieData = d3.pie()(data)
-
-        const arcs = svg.selectAll('g')
-            .data(pieData)
-            .enter()
-            .append('g')
-            .attr('transform', `translate(${width / 2}, ${height / 2})`)
         
-        arcs.append('path')
-            .attr('fill', (_, i) => colors[i])
-            .attr('d', function (d) {
-                // 注册path data
-                return arc(d)
-            })
-
-        arcs.append('text')
-            .attr('transform', d => {
-                const pos = outerArc.centroid(d)
-                // 根据中线角度判断x值的正负
-                pos[0] = radius * 0.92 * (midAngle(d) < Math.PI ? 1 : -1)
-
-                // 找到图形中间点
-                return `translate(${ pos })`
-            })
-            .attr('dy', '.35em')
-            .attr('text-anchor', 'middle')
-            .text(d => d.value)
-
-        const polyline = svg.append('g')
+        const arcsG = svg.append('g')
+            .attr('class', 'arcs')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+        const labelsG = svg.append('g')
+            .attr('class', 'labels')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+        const polylinesG = svg.append('g')
             .attr('class', 'lines')
             .attr('transform', `translate(${width / 2}, ${height / 2})`)
-            .selectAll('polyline')
-            .data(pieData)
 
-        polyline.enter()
-            .append('polyline')
-            .attr('points', d => {
-                const pos = outerArc.centroid(d)
-                pos[0] = radius * 0.88 * (midAngle(d) < Math.PI ? 1 : -1)
+        function renderPieChart() {
+            const data = randomData()
 
-                return [
-                    arc.centroid(d),
-                    outerArc.centroid(d),
-                    pos
-                ]
-            })
+            // 通过pie函数生成饼图或环形图所需要数据
+            const pieData = d3.pie()(data)
+
+            // draw arc
+            const arcs = arcsG.selectAll('path')
+                .data(pieData)
+
+            arcs.enter()
+                .append('path')
+                .attr('fill', (_, i) => colors[i])
+                .attr('d', function (d) {
+                    this._current = this._current || d
+                    // 注册path data
+                    return arc(d)
+                })
+
+            arcs.transition()
+                .duration(500)
+                .attrTween('d', function (d) {
+                    const interpolate = d3.interpolate(this._current, d)
+                    this._current = interpolate(0)
+                    return function(t) {
+                        return arc(interpolate(t))
+                    }
+                })
+            
+            arcs.exit()
+                .remove()
+
+            // draw label
+            const labels = labelsG.selectAll('text')
+                .data(pieData)
+
+            labels.enter()
+                .append('text')
+                .attr('transform', function (d) {
+                    this._current = this._current || d
+                    const pos = outerArc.centroid(d)
+                    // 根据中线角度判断x值的正负
+                    pos[0] = radius * 0.92 * (midAngle(d) < Math.PI ? 1 : -1)
+
+                    // 找到图形中间点
+                    return `translate(${ pos })`
+                })
+                .attr('dy', '.35em')
+                .attr('text-anchor', 'middle')
+                .text(d => d.value)
+            
+            labels.transition()
+                .duration(500)
+                .attrTween('transform', function (d) {
+                    const interpolate = d3.interpolate(this._current, d)
+                    this._current = interpolate(0)
+                    return function (t) {
+                        const pos = outerArc.centroid(interpolate(t))
+                        pos[0] = radius * 0.92 * (midAngle(interpolate(t)) < Math.PI ? 1 : -1)
+                        return `translate(${ pos })`
+                    }
+                })
+            
+            labels.exit()
+                .remove()
+
+            // draw polyline
+            const polylines = polylinesG.selectAll('polyline')
+                .data(pieData)
+
+            polylines.enter()
+                .append('polyline')
+                .attr('points', function (d) {
+                    this._current = this._current || d
+                    const pos = outerArc.centroid(d)
+                    pos[0] = radius * 0.88 * (midAngle(d) < Math.PI ? 1 : -1)
+
+                    return [
+                        arc.centroid(d),
+                        outerArc.centroid(d),
+                        pos
+                    ]
+                })
+            
+            polylines.transition()
+                .duration(500)
+                .attrTween('points', function (d) {
+                    const interpolate = d3.interpolate(this._current, d)
+                    this._current = interpolate(0)
+
+                    return t => {
+                        const pos = outerArc.centroid(interpolate(t))
+                        pos[0] = radius * 0.88 * (midAngle(interpolate(t)) < Math.PI ? 1 : -1)
+                        
+                        return [
+                            arc.centroid(interpolate(t)),
+                            outerArc.centroid(interpolate(t)),
+                            pos
+                        ]
+                    }
+                })
+            
+            polylines.exit()
+                .remove()
+        }
 
         function midAngle(d){
             return d.startAngle + (d.endAngle - d.startAngle)/2
         }
+
+        // generate random data
+        function randomData() {
+            const length = (Math.random() * 4 >> 0) + 5
+            const data = new Array(length)
+            for (let i = 0; i < length;i++) {
+                data[i] = Math.random() * 100 >> 0
+            }
+            return data
+        }
         
-        // 动态变化
-        // text dx dy
+        renderPieChart()
+        // 改变数据
+        d3.select('.change-btn')
+            .on('click', renderPieChart)
     </script>
 </body>
 </html>
