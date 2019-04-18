@@ -23,6 +23,12 @@
             fill: none;
         }
 
+        #chart-wrapper {
+            width: 70vw;
+            height: 70vh;
+            margin: auto;
+        }
+
         .change-btn {
             position: fixed;
             left: 100px;
@@ -31,12 +37,15 @@
     </style>
 </head>
 <body>
+    <div id="chart-wrapper"></div>
     <div class="change-btn">CHANGE DATA</div>
     <script src='https://d3js.org/d3.v5.min.js'></script>
     <script src='https://d3js.org/d3-scale-chromatic.v1.min.js'></script>
     <script>
-        const width = 600
-        const height = 600
+        const reg = /([0-9]+\.?[0-9]+)px/
+        const chartWrapper = d3.select('#chart-wrapper')
+        const width = reg.exec(chartWrapper.style('width'))[1]
+        const height = reg.exec(chartWrapper.style('height'))[1]
         const radius = Math.min(width, height) / 2
         const radiusArg = [0.5, 0.75] // 内外环半径
         const cornerRadius = 5 // 拐角半径
@@ -45,6 +54,8 @@
         const colors = d3.schemePastel2
         const innerRadius = radiusArg[0] * radius
         const outerRadius = radiusArg[1] * radius
+        console.log(width, height, radius, innerRadius, outerRadius)
+
 
         // 通过arc函数生成原型或圆环
         const arc = d3.arc()
@@ -60,7 +71,7 @@
             .cornerRadius(cornerRadius)
             .padAngle(padAngle)
 
-        const svg = d3.select('body')
+        const svg = chartWrapper
             .append('svg')
             .attr('class', 'pie-chart')
             .attr('width', width)
