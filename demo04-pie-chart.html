@@ -89,7 +89,8 @@
             const data = randomData()
 
             // 通过pie函数生成饼图或环形图所需要数据
-            const pieData = d3.pie()(data)
+            const pieData = d3.pie()
+                .sort(null)(data) // prohibit data sort
 
             // draw arc
             const arcs = arcsG.selectAll('path')
