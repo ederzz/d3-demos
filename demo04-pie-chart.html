@@ -47,23 +47,23 @@
         const width = reg.exec(chartWrapper.style('width'))[1]
         const height = reg.exec(chartWrapper.style('height'))[1]
         const radius = Math.min(width, height) / 2
-        const radiusArg = [0.5, 0.75] // 内外环半径
-        const cornerRadius = 5 // 拐角半径
-        const padAngle = Math.PI / 140 // 设置相邻区域的间隙
+        const radiusArg = [0.5, 0.75] // [innerRadius percent, outerRadius percent]
+        const cornerRadius = 5 // corner radius for d3.arc
+        const padAngle = Math.PI / 140 // pad angle for d3.arc
 
         const colors = d3.schemePastel2
         const innerRadius = radiusArg[0] * radius
         const outerRadius = radiusArg[1] * radius
-        const transitionDuration = 500 // 动画过渡时间
+        const transitionDuration = 500 // transition animation duration
 
-        // 通过arc函数生成原型或圆环
+        // 通过arc函数生成圆形或圆环
         const arc = d3.arc()
             .innerRadius(innerRadius)
             .outerRadius(outerRadius)
             .cornerRadius(cornerRadius)
             .padAngle(padAngle)
 
-        // 计算折线拐点的圆环
+        // calc the inflection point of the polyline.
         const outerArc = d3.arc()
             .innerRadius(outerRadius)
             .outerRadius(outerRadius + 50)
@@ -88,7 +88,7 @@
         function renderPieChart() {
             const data = randomData()
 
-            // 通过pie函数生成饼图或环形图所需要数据
+            // calc the data of d3.arc through d3.pie.
             const pieData = d3.pie()
                 .sort(null)(data) // prohibit data sort
 
@@ -99,54 +99,44 @@
             arcs.enter()
                 .append('path')
                 .attr('fill', (_, i) => colors[i])
-                .attr('d', function (d) {
-                    this._current = this._current || d
-                    // 注册path data
-                    return arc(d)
-                })
 
-            arcs.transition()
+            arcsG.selectAll('path').transition()
                 .duration(transitionDuration)
                 .attrTween('d', function (d) {
-                    // 通过插值将 _current数据 过渡到新的数据 d
+                    this._current = this._current || d // _current is the current data, d is the next render data.
                     const interpolate = d3.interpolate(this._current, d)
                     this._current = interpolate(1)
+
                     return function(t) {
                         return arc(interpolate(t))
                     }
                 })
-            
+
+            // remove excess element
             arcs.exit()
                 .remove()
 
-            // draw label
+            // draw labels
             const labels = labelsG.selectAll('text')
                 .data(pieData)
 
             labels.enter()
                 .append('text')
-                .attr('transform', function (d) {
-                    this._current = this._current || d
-                    const pos = outerArc.centroid(d)
-                    // 根据中线角度判断x值的正负
-                    pos[0] = radius * 0.92 * (midAngle(d) < Math.PI ? 1 : -1)
-
-                    // 找到图形中间点
-                    return `translate(${ pos })`
-                })
                 .attr('dy', '.35em')
                 .attr('text-anchor', 'middle')
-                .text(d => d.value)
             
-            labels.transition()
+            labelsG.selectAll('text').transition()
                 .duration(transitionDuration)
                 .text(d => d.value)
                 .attrTween('transform', function (d) {
                     const interpolate = d3.interpolate(this._current, d)
                     this._current = interpolate(1)
                     return function (t) {
+                        // 找到外圆环图形中间点
                         const pos = outerArc.centroid(interpolate(t))
+                        // 根据中线角度判断x值的正负
                         pos[0] = radius * 0.92 * (midAngle(interpolate(t)) < Math.PI ? 1 : -1)
+
                         return `translate(${ pos })`
                     }
                 })
@@ -160,19 +150,8 @@
 
             polylines.enter()
                 .append('polyline')
-                .attr('points', function (d) {
-                    this._current = this._current || d
-                    const pos = outerArc.centroid(d)
-                    pos[0] = radius * 0.88 * (midAngle(d) < Math.PI ? 1 : -1)
-
-                    return [
-                        arc.centroid(d),
-                        outerArc.centroid(d),
-                        pos
-                    ]
-                })
             
-            polylines.transition()
+            polylinesG.selectAll('polyline').transition()
                 .duration(transitionDuration)
                 .attrTween('points', function (d) {
                     const interpolate = d3.interpolate(this._current, d)
@@ -209,7 +188,7 @@
         }
         
         renderPieChart()
-        // 改变数据
+        // change data
         d3.select('.change-btn')
             .on('click', renderPieChart)
     </script>
