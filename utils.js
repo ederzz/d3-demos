@@ -24,3 +24,5 @@ function LightenDarkenColor(col, amt) {
 
     return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
 }
+
+const pxStr2numberReg = /([0-9]+\.?[0-9]+)px/

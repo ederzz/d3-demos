@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #chart-wrapper {
+            margin: auto;
+            width: 80vw;
+            height: 80vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chart-wrapper"></div>
+
+    <script src="./utils.js"></script>
+    <script src="http://momentjs.com/downloads/moment.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const chartWrapper = d3.select('#chart-wrapper')
+        const width = Number(pxStr2numberReg.exec(chartWrapper.style('width'))[1])
+        const height = Number(pxStr2numberReg.exec(chartWrapper.style('height'))[1])
+        const svg = chartWrapper
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        
+        const data = [
+            {
+                date: '2018-08-01',
+                value: 23
+            },
+            {
+                date: '2018-08-02',
+                value: 34,
+                verifyRequired: true
+            },
+            {
+                date: '2018-09-03',
+                value: 55
+            },
+            {
+                date: '2018-09-04',
+                value: 11
+            },
+            {
+                date: '2018-09-05',
+                value: 75
+            },
+            {
+                date: '2018-09-06',
+                value: 44
+            },
+            {
+                date: '2018-09-07',
+                value: 84
+            },
+            {
+                date: '2018-09-08',
+                value: 17
+            },
+            {
+                date: '2018-10-09',
+                value: 47
+            },
+            {
+                date: '2018-10-10',
+                value: 24
+            }
+        ]
+
+        const xAxisScale = d3.scaleBand()
+            .range([0, width])
+            .domain(data.map(d => d.date))
+            .paddingInner(0.1)
+            
+        const yAxisScale = d3.scaleLinear()
+            .range([0, height])
+            .domain([0, d3.max(data, d => d.value) + 10])
+        
+        const barWidth = xAxisScale.bandwidth()
+        const currentMonth = [
+            moment('2018-09').startOf('month'),
+            moment('2018-09').endOf('month'),
+        ]
+
+        const marksWrapper = svg.append('g')
+            .attr('class', 'marks')
+
+        svg.append('g')
+            .selectAll('rect')
+            .data(data)
+            .enter()
+            .append('rect')
+            .attr('fill', function (d) {
+                if (moment(d.date).isAfter(currentMonth[0]) &&
+                    moment(d.date).isBefore(currentMonth[1])) {
+                    return '#e0e1e6'
+                }
+                return '#eff0f3'
+            })
+            .attr('x', d => xAxisScale(d.date))
+            .attr('y', d => {
+                console.log()
+                return height - yAxisScale(d.value)
+            })
+            .attr('rx', 5)
+            .attr('ry', 5)
+            .attr('width', barWidth)
+            .attr('height', d => yAxisScale(d.value))
+            .on('mouseover', function (d) {
+                if (moment(d.date).isAfter(currentMonth[0]) &&
+                    moment(d.date).isBefore(currentMonth[1])) {
+                    d3.select(this)
+                        .attr('fill', '#2bccad')
+                }
+            })
+            .on('mouseout', function (d) {
+                if (moment(d.date).isAfter(currentMonth[0]) &&
+                    moment(d.date).isBefore(currentMonth[1])) {
+                    d3.select(this)
+                        .attr('fill', '#e0e1e6')
+                }
+            })
+            .each(d => {
+                if (d.verifyRequired) {
+                    console.log(222)
+                    marksWrapper.append('circle')
+                        .attr('fill', 'red')
+                }
+            })
+
+            // 淡色：TODO: #eff0f3
+    </script>
+</body>
+
+</html>
