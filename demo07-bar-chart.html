@@ -14,13 +14,14 @@
             width: 100vw;
             height: 100vh;
             display: flex;
+            position: relative;
         }
 
         #chart-wrapper {
             margin: auto;
             width: 80vw;
             height: 80vh;
-            padding-bottom: 20px;
+            padding-bottom: .2rem;
             position: relative;
             overflow: hidden;
         }
@@ -52,6 +53,11 @@
             padding: .1rem;
             box-sizing: border-box;
             font-size: .14rem;
+            background-color: #fff;
+            box-shadow: 0 0 10px 0 #e2e2e2;
+            border-radius: 4px;
+            position: absolute;
+            opacity: 0;
         }
 
         .tooltip img {
@@ -77,8 +83,6 @@
     <script src="http://momentjs.com/downloads/moment.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script>
-        d3.select('body')
-            .style('position', 'relative')
         const data = mockData()
         const chartWrapper = d3.select('#chart-wrapper')
         const width = tsPx2number(chartWrapper.style('width'))
@@ -147,27 +151,19 @@
         const xAxis = d3.axisBottom(xAxisScale)
             .tickFormat(s => s.split('-')[2])
             .tickSize(0)
-            
-        const yAxisScale = d3.scaleLinear()
-            .range([0, height - 10])
-            .domain([0, d3.max(renderData, d => d.value) + 10])
-        
+            .tickPadding(6)
         const barWidth = xAxisScale.bandwidth()
-        const curMonInterval = [
-            moment('2018-09').startOf('month'),
-            moment('2018-09').endOf('month'),
-        ]
+        const yAxisScale = d3.scaleLinear()
+            .range([0, height - 20 - barWidth])
+            .domain([0, d3.max(renderData, d => d.value)])
+        
 
         const marksWrapper = svg.append('g')
             .attr('class', 'marks')
         const toolTip = chartWrapper
             .append('div')
             .attr('class', 'tooltip')
-            .style('background-color', '#fff')
-            .style('box-shadow', '0 0 10px 0 #e2e2e2')
-            .style('border-radius', '4px')
-            .style('position', 'absolute')
-            .style('opacity', 0)
+            
         toolTip.html(
             `
                 <div class="left">
@@ -199,9 +195,7 @@
                 return '#eff0f3'
             })
             .attr('x', d => xAxisScale(d.date))
-            .attr('y', d => {
-                return height - 20 - yAxisScale(d.value)
-            })
+            .attr('y', d => height - 20 - yAxisScale(d.value))
             .attr('rx', 2)
             .attr('ry', 2)
             .attr('width', barWidth)
@@ -209,17 +203,16 @@
             .on('mouseover', function (d) {
                 if (d.isThisMonth) {
                     const {
-                        pageX,
-                        pageY
+                        offsetX,
+                        offsetY
                     } = d3.event
                     toolTipData.text(d.value)
                     toolTipDate.text(d.date)
                     const h = tsPx2number(toolTip.style('height'))
-                    console.log(h)
                     toolTip
                         .style('opacity', 1)
-                        .style('left', `${pageX}px`)
-                        .style('top', `${pageY - h - 10}px`)
+                        .style('left', `${offsetX + 10}px`)
+                        .style('top', `${offsetY - h - 10}px`)
                     d3.select(this)
                         .attr('fill', '#2bccad')
                 }
@@ -234,7 +227,7 @@
             .each(d => {
                 if (d.verifyRequired) {
                     const cx = xAxisScale(d.date) + barWidth / 2
-                    const cy = height - yAxisScale(d.value) - barWidth / 2
+                    const cy = height - yAxisScale(d.value) - barWidth / 2 - 20
                     const r = barWidth / 4
 
                     marksWrapper.append('circle')
@@ -247,7 +240,6 @@
                         .attr('cx', cx)
                         .attr('cy', cy)
                         .attr('r', r)
-
                 }
             })
         
@@ -260,8 +252,8 @@
             .style('opacity', 0)
         d3.select('.x-axis')
             .selectAll('.tick text')
+            .style('font-size', '.07rem')
             .attr('fill', (d, i) => {
-                console.log(d, i)
                 if (moment(d).format('YYYY-MM') === currentMonth) {
                     return '#e0e1e6'
                 }
