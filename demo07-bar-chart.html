@@ -87,39 +87,15 @@
         const chartWrapper = d3.select('#chart-wrapper')
         const width = tsPx2number(chartWrapper.style('width'))
         const height = tsPx2number(chartWrapper.style('height'))
-        const svg = chartWrapper
-            .append('svg')
-            .attr('width', width)
-            .attr('height', height)
-        const statusBar = chartWrapper
-            .append('div')
-            .attr('class', 'status-bar')
-            .html(
-                `
-                    <div class="prev-month">
-                        <img src="./assets/prev-month.png" />
-                        <span class="text"></span>
-                    </div>
-                    <div class="cur-month"></div>
-                    <div class="next-month">
-                        <span class="text"></span>
-                        <img src="./assets/next-month.png" />
-                    </div>
-                `
-            )
+        const maxBarH = .7
 
         const currentMonth = '2018-09'
         const nextMonth = moment(currentMonth).add(1, 'month')
             .format('YYYY-MM')
         const prevMonth = moment(currentMonth).subtract(1, 'month')
             .format('YYYY-MM')
-        statusBar.select('.prev-month .text')
-            .text(prevMonth)
-        statusBar.select('.cur-month')
-            .text(currentMonth)
-        statusBar.select('.next-month .text')
-            .text(nextMonth)
         
+        // set render data
         const curMonthData = data[currentMonth].map(d => ({
             ...d,
             date: `${currentMonth}-${d.date}`,
@@ -144,26 +120,57 @@
             ...curMonthData,
             ...nextMonthData
         ]
+
+        // set xaxis,yaxis scale.
         const xAxisScale = d3.scaleBand()
             .range([0, width])
             .domain(renderData.map(d => d.date))
             .paddingInner(0.1)
-        const xAxis = d3.axisBottom(xAxisScale)
-            .tickFormat(s => s.split('-')[2])
-            .tickSize(0)
-            .tickPadding(6)
         const barWidth = xAxisScale.bandwidth()
         const yAxisScale = d3.scaleLinear()
-            .range([0, height - 20 - barWidth])
+            .range([0, height * maxBarH])
             .domain([0, d3.max(renderData, d => d.value)])
-        
 
+        const svg = chartWrapper
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        const statusBar = chartWrapper
+            .append('div')
+            .attr('class', 'status-bar')
+            .html(
+                `
+                    <div class="prev-month">
+                        <img src="./assets/prev-month.png" />
+                        <span class="text"></span>
+                    </div>
+                    <div class="cur-month"></div>
+                    <div class="next-month">
+                        <span class="text"></span>
+                        <img src="./assets/next-month.png" />
+                    </div>
+                `
+            )
+        statusBar.select('.prev-month .text')
+            .text(prevMonth)
+        statusBar.select('.cur-month')
+            .text(currentMonth)
+        statusBar.select('.next-month .text')
+            .text(nextMonth)
+
+        // bind bar chart data.
+        const bars = svg.append('g')
+            .selectAll('rect')
+            .data(renderData)
+            .enter()
+            .append('rect')
         const marksWrapper = svg.append('g')
             .attr('class', 'marks')
+
+        // set tooltip wrapper
         const toolTip = chartWrapper
             .append('div')
             .attr('class', 'tooltip')
-            
         toolTip.html(
             `
                 <div class="left">
@@ -179,52 +186,74 @@
                 </div>
             `
         )
-
         const toolTipDate = toolTip.select('.date')
         const toolTipData = toolTip.select('.data')
 
-        svg.append('g')
-            .selectAll('rect')
-            .data(renderData)
-            .enter()
-            .append('rect')
-            .attr('fill', function (d) {
-                if (d.isThisMonth) {
-                    return '#e0e1e6'
-                }
-                return '#eff0f3'
-            })
-            .attr('x', d => xAxisScale(d.date))
-            .attr('y', d => height - 20 - yAxisScale(d.value))
-            .attr('rx', 2)
-            .attr('ry', 2)
-            .attr('width', barWidth)
-            .attr('height', d => yAxisScale(d.value))
-            .on('mouseover', function (d) {
-                if (d.isThisMonth) {
-                    const {
-                        offsetX,
-                        offsetY
-                    } = d3.event
-                    toolTipData.text(d.value)
-                    toolTipDate.text(d.date)
-                    const h = tsPx2number(toolTip.style('height'))
-                    toolTip
-                        .style('opacity', 1)
-                        .style('left', `${offsetX + 10}px`)
-                        .style('top', `${offsetY - h - 10}px`)
-                    d3.select(this)
-                        .attr('fill', '#2bccad')
-                }
-            })
-            .on('mouseout', function (d) {
-                if (d.isThisMonth) {
-                    toolTip.style('opacity', 0)
-                    d3.select(this)
-                        .attr('fill', '#e0e1e6')
-                }
-            })
-            .each(d => {
+        // render chart.
+        renderBarChart()
+        renderMarks()
+        renderAxis(xAxisScale)
+
+        function renderBarChart() {
+            bars.attr('fill', d => d.isThisMonth ? '#e0e1e6' : '#eff0f3')
+                .attr('x', d => xAxisScale(d.date))
+                .attr('y', d => height - 20 - yAxisScale(d.value))
+                .attr('rx', 2)
+                .attr('ry', 2)
+                .attr('width', barWidth)
+                .attr('height', d => yAxisScale(d.value))
+                .on('mouseover', function (d) {
+                    if (d.isThisMonth) {
+                        const {
+                            offsetX,
+                            offsetY
+                        } = d3.event
+                        toolTipData.text(d.value)
+                        toolTipDate.text(d.date)
+                        const h = tsPx2number(toolTip.style('height'))
+                        toolTip
+                            .style('opacity', 1)
+                            .style('left', `${offsetX + 10}px`)
+                            .style('top', `${offsetY - h - 10}px`)
+                        d3.select(this)
+                            .attr('fill', '#2bccad')
+                    }
+                })
+                .on('mouseout', function (d) {
+                    if (d.isThisMonth) {
+                        toolTip.style('opacity', 0)
+                        d3.select(this)
+                            .attr('fill', '#e0e1e6')
+                    }
+                })
+        }
+        
+        function renderAxis(scale) {
+            const xAxis = d3.axisBottom(scale)
+                .tickFormat(s => s.split('-')[2])
+                .tickSize(0)
+                .tickPadding(6)
+
+            svg.append('g')
+                .attr('class', 'x-axis')
+                .call(xAxis)
+                .attr('transform', `translate(0, ${height - 20})`)
+            d3.select('.x-axis')
+                .select('path.domain')
+                .style('opacity', 0)
+            d3.select('.x-axis')
+                .selectAll('.tick text')
+                .style('font-size', '.07rem')
+                .attr('fill', (d, i) => {
+                    if (moment(d).format('YYYY-MM') === currentMonth) {
+                        return '#e0e1e6'
+                    }
+                    return '#eff0f3'
+                })
+        }
+
+        function renderMarks() {
+            bars.each(d => {
                 if (d.verifyRequired) {
                     const cx = xAxisScale(d.date) + barWidth / 2
                     const cy = height - yAxisScale(d.value) - barWidth / 2 - 20
@@ -242,23 +271,7 @@
                         .attr('r', r)
                 }
             })
-        
-        svg.append('g')
-            .attr('class', 'x-axis')
-            .call(xAxis)
-            .attr('transform', `translate(0, ${height - 20})`)
-        d3.select('.x-axis')
-            .select('path.domain')
-            .style('opacity', 0)
-        d3.select('.x-axis')
-            .selectAll('.tick text')
-            .style('font-size', '.07rem')
-            .attr('fill', (d, i) => {
-                if (moment(d).format('YYYY-MM') === currentMonth) {
-                    return '#e0e1e6'
-                }
-                return '#eff0f3'
-            })
+        }
 
         function tsPx2number(s) {
             return Number(pxStr2numberReg.exec(s)[1])
