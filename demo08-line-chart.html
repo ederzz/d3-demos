@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #line-chart-wrapper {
+            width: 80vw;
+            height: 80vh;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="line-chart-wrapper"></div>
+
+    <script src="./utils.js"></script>
+    <script src="./mock/demo08.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const data = mockData()
+        const chartWrapper = d3.select('#line-chart-wrapper')
+        const width = tsPx2number(chartWrapper.style('width'))
+        const height = tsPx2number(chartWrapper.style('height'))
+        const svg = chartWrapper
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        const lineWrapper = svg.append('g')
+            .attr('class', 'line-wrapper')
+        const areaWrapper = svg.append('g')
+            .attr('class', 'area-wrapper')
+        
+        const margin = {
+            top: 20, 
+            right: 30, 
+            bottom: 30, 
+            left: 40
+        }
+
+        const {
+            xScale,
+            yScale
+        } = setXyScale(data)
+        const line = d3.line()
+            // .defined(d => !isNaN(d.value))
+            .x(d => xScale(d.date))
+            .y(d => yScale(d.value))
+            
+        const xAxis = d3.axisBottom(xScale)
+        const yAxis = d3.axisLeft(yScale)
+
+        drawLineChart()
+
+        function setXyScale(data) {
+            const xScale = d3.scaleTime()
+                .domain(d3.extent(data, d => d.date))
+                .range([margin.left, width - margin.right])
+            
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) + 10])
+                .range([height - margin.bottom, margin.top])
+            
+            return {
+                xScale,
+                yScale
+            }
+        }
+
+        function drawLineChart() {
+            svg.append('g')
+                .call(xAxis)
+                .attr('transform', `translate(0, ${height - margin.bottom})`)
+            svg.append('g')
+                .call(yAxis)
+                .attr('transform', `translate(${margin.left})`)
+            
+            lineWrapper.append('path')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', 'steelblue')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('d', line)
+        }
+    </script>
+</body>
+</html>

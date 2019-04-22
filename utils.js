@@ -26,3 +26,7 @@ function LightenDarkenColor(col, amt) {
 }
 
 const pxStr2numberReg = /([0-9]+\.?[0-9]+)px/
+
+function tsPx2number(s) {
+    return Number(pxStr2numberReg.exec(s)[1])
+}
