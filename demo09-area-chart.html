@@ -14,7 +14,7 @@
             align-items: center;
         }
 
-        #line-chart-wrapper {
+        #area-chart-wrapper {
             width: 80vw;
             height: 80vh;
             margin: auto;
@@ -23,22 +23,22 @@
 </head>
 
 <body>
-    <div id="line-chart-wrapper"></div>
+    <div id="area-chart-wrapper"></div>
 
     <script src="./utils.js"></script>
     <script src="./mock/demo08.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script>
         const data = mockData()
-        const chartWrapper = d3.select('#line-chart-wrapper')
+        const chartWrapper = d3.select('#area-chart-wrapper')
         const width = tsPx2number(chartWrapper.style('width'))
         const height = tsPx2number(chartWrapper.style('height'))
         const svg = chartWrapper
             .append('svg')
             .attr('width', width)
             .attr('height', height)
-        const lineWrapper = svg.append('g')
-            .attr('class', 'line-wrapper')
+        const areaWrapper = svg.append('g')
+            .attr('class', 'area-wrapper')
         
         const margin = {
             top: 20, 
@@ -51,15 +51,15 @@
             xScale,
             yScale
         } = setXyScale(data)
-        const line = d3.line()
-            // .defined(d => !isNaN(d.value))
+        const area = d3.area()
             .x(d => xScale(d.date))
-            .y(d => yScale(d.value))
+            .y1(d => yScale(d.value))
+            .y0(yScale(0))
             
         const xAxis = d3.axisBottom(xScale)
         const yAxis = d3.axisLeft(yScale)
 
-        drawLineChart()
+        drawChart()
 
         function setXyScale(data) {
             const xScale = d3.scaleTime()
@@ -76,7 +76,7 @@
             }
         }
 
-        function drawLineChart() {
+        function drawChart() {
             svg.append('g')
                 .call(xAxis)
                 .attr('transform', `translate(0, ${height - margin.bottom})`)
@@ -84,14 +84,10 @@
                 .call(yAxis)
                 .attr('transform', `translate(${margin.left})`)
             
-            lineWrapper.append('path')
+            areaWrapper.append('path')
                 .datum(data)
-                .attr('fill', 'none')
-                .attr('stroke', 'steelblue')
-                .attr('stroke-width', 1.5)
-                .attr('stroke-linejoin', 'round')
-                .attr('stroke-linecap', 'round')
-                .attr('d', line)
+                .attr('fill', 'steelblue')
+                .attr('d', area)
         }
     </script>
 </body>
