@@ -12,8 +12,8 @@ function mockData() {
     let now = +new Date(1997, 9, 3)
     let oneDay = 24 * 3600 * 1000
     let value = Math.random() * 1000
-    for (var i = 0; i < 200; i++) {
-        data.push(randomData())
+    for (var i = 0; i < 20; i++) {
+        data.push(randomData(i))
     }
 
     return data

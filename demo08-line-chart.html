@@ -39,6 +39,10 @@
             .attr('height', height)
         const lineWrapper = svg.append('g')
             .attr('class', 'line-wrapper')
+        const hoverLayer = svg.append('g')
+            .attr('class', 'hover-layer')
+        const pointsWrapper = svg.append('g')
+            .attr('class', 'points-wrapper')
         
         const margin = {
             top: 20, 
@@ -57,13 +61,41 @@
             .y(d => yScale(d.value))
             
         const xAxis = d3.axisBottom(xScale)
+            .ticks(5, '%Y/%m/%d')
         const yAxis = d3.axisLeft(yScale)
 
+        const bisect = d3.bisector(d => d.date).left
+        const resolveIndex = mx => {
+            const date = xScale.invert(mx)
+            const index = bisect(data, date)
+            if (index >= data.length ||
+                index === 0) {
+                return
+            }
+            const a = data[index - 1]
+            const b = data[index]
+            return date - a.date > b.date - date ? index : index - 1
+        }
+
         drawLineChart()
+        drawPoints()
+        svg.on('mousemove', function (d) {
+            const [x, y] = d3.mouse(this)
+            const i = resolveIndex(x)
+            d3.selectAll('.points-wrapper circle')
+                .attr('r', 4)
+            if (i !== undefined) {
+                d3.select(`.point-${i}`)
+                    .attr('r', 8)
+            }
+        })
 
         function setXyScale(data) {
+            // 设置坐标轴两侧留白
+            const min = new Date(+d3.min(data, d => d.date) - 50 * 24 * 3600 * 100)
+            const max = new Date(+d3.max(data, d => d.date) + 50 * 24 * 3600 * 100)
             const xScale = d3.scaleTime()
-                .domain(d3.extent(data, d => d.date))
+                .domain([min, max]) 
                 .range([margin.left, width - margin.right])
             
             const yScale = d3.scaleLinear()
@@ -85,6 +117,7 @@
                 .attr('transform', `translate(${margin.left})`)
             
             lineWrapper.append('path')
+                .attr('class', 'line')
                 .datum(data)
                 .attr('fill', 'none')
                 .attr('stroke', 'steelblue')
@@ -92,6 +125,19 @@
                 .attr('stroke-linejoin', 'round')
                 .attr('stroke-linecap', 'round')
                 .attr('d', line)
+        }
+
+        function drawPoints() {
+            pointsWrapper.selectAll('circle')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', (_, i) => `point-${i}`)
+                .attr('r', 4)
+                .attr('stroke', 'steelblue')
+                .attr('fill', '#fff')
+                .attr('cx', d => xScale(d.date))
+                .attr('cy', d => yScale(d.value))
         }
     </script>
 </body>
