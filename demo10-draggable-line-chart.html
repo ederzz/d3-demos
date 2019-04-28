@@ -1,231 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>draggable line chart</title>
     <style>
         body {
-            background-color: #111;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        div {
-            margin: 20px auto 0;
-            color: #aaa;
-            font-weight: 100;
+        #line-chart-wrapper {
+            width: 80vw;
+            height: 80vh;
+            margin: auto;
         }
 
-        svg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .xaxis path,
-        .xaxis line,
-        .yaxis path,
-        .yaxis line {
-            stroke: #aaa;
-            fill: none;
-            shape-rendering: crispEdges;
-        }
-
-        .xaxis text,
-        .yaxis text {
-            font-family: sans-serif;
-            font-size: 11px;
-            fill: #aaa;
-        }
-
-        .datapoint {
-            cursor: pointer;
-            stroke: #111;
-            fill: rgba(0, 150, 255, .75);
-            stroke-width: 7;
-        }
-
-        .lineChart {
-            fill: none;
-            stroke-width: 3;
-            stroke: rgba(100, 100, 100, 1);
+        .tip {
+            font-size: 14px;
+            fill: #93a3e4;
         }
     </style>
 </head>
 
 <body>
-    <div>Drag data points to re-render chart</div>
+    <div id="line-chart-wrapper"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="./utils.js"></script>
+    <script src="./mock/demo08.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
     <script>
-        let w = 800;
-        let h = 400;
-        let padding = 25;
-        let dataset = [
-            [10, 10],
-            [20, 50],
-            [30, 40],
-            [40, 80],
-            [50, 90],
-            [60, 50],
-            [70, 70],
-            [80, 60],
-            [90, 10],
-            [100, 50],
-            [110, 40],
-            [120, 70],
-            [130, 20],
-            [140, 40],
-            [150, 30]
-        ];
-
-        /*create svg element*/
-        let svg = d3
-            .select("body")
-            .append("svg")
-            .attr("width", w)
-            .attr("height", h)
-            .attr("id", "chart");
-
-        let drag = d3.behavior
-            .drag()
-            .on("dragstart", dragstarted)
-            .on("drag", dragged)
-            .on("dragend", dragended);
-
-        /*x scale*/
-        let xScale = d3.scale
-            .linear()
-            .domain([0, d3.max(dataset, d => d[0])])
-            .range([padding, w - padding]);
-
-        /*y scale*/
-        let yScale = d3.scale
-            .linear()
-            .domain([0, d3.max(dataset, d => d[1])])
-            .range([h - padding, padding]);
-
-        /*x axis*/
-        let xAxis = d3.svg
-            .axis()
-            .scale(xScale)
-            .orient("bottom");
-
-        /*append x axis*/
-        svg
-            .append("g")
-            .attr({
-                class: "xaxis",
-                transform: `translate(0, ${h - padding})`
-            })
-            .call(xAxis);
-
-        /*y axis*/
-        let yAxis = d3.svg
-            .axis()
-            .scale(yScale)
-            .orient("left");
-
-        /*append y axis*/
-        svg
-            .append("g")
-            .attr({
-                class: "yaxis",
-                transform: `translate(${padding}, 0)`
-            })
-            .call(yAxis);
-
-        /*define line*/
-        let lines = d3.svg
-            .line()
-            .x(d => xScale(d[0]))
-            .y(d => yScale(d[1]))
-            .interpolate("monotone");
-
-        /*append line*/
-        let path = svg.append("path").attr({
-            d: lines(dataset),
-            class: "lineChart"
-        });
-
-        svg
-            .select(".lineChart")
-            .style("opacity", 0)
-            .transition()
-            .duration(2500)
-            .delay(1000)
-            .style("opacity", 1);
-
-        /*add points*/
-        let points = svg
-            .selectAll("circle")
-            .data(dataset)
-            .enter()
-            .append("circle")
-            .call(drag);
-
-        /*point attributes*/
-        points
-            .attr("cy", 0)
-            .transition()
-            .duration(1500)
-            .delay((d, i) => i * 100 + 500)
-            .ease("elastic")
-            .attr({
-                cx: d => xScale(d[0]),
-                cy: d => yScale(d[1]),
-                r: 7,
-                class: "datapoint",
-                id: (d, i) => i
-            })
-            .style("opacity", 1);
-
-        let xMax = d3.max(dataset, d => d[0]),
-            yMax = d3.max(dataset, d => d[1]);
-
-        function dragstarted() {
-            d3.event.sourceEvent.stopPropagation();
-            d3.select(this).classed("dragging datapoint", true);
+        const data = mockData()
+        const chartWrapper = d3.select('#line-chart-wrapper')
+        const width = tsPx2number(chartWrapper.style('width'))
+        const height = tsPx2number(chartWrapper.style('height'))
+        const svg = chartWrapper
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        const lineWrapper = svg.append('g')
+            .attr('class', 'line-wrapper')
+        const hoverLayer = svg.append('g')
+            .attr('class', 'hover-layer')
+        const pointsWrapper = svg.append('g')
+            .attr('class', 'points-wrapper')
+        
+        const margin = {
+            top: 20, 
+            right: 30, 
+            bottom: 30, 
+            left: 40
         }
 
-        function dragged() {
-            d3.select(this).attr({
-                cx: Math.max(padding, Math.min(d3.event.x, w - padding)),
-                cy: Math.max(padding, Math.min(d3.event.y, h - padding))
-            });
+        const {
+            xScale,
+            yScale
+        } = setXyScale(data)
+        const line = d3.line()
+            // .defined(d => !isNaN(d.value))
+            .x(d => xScale(d.date))
+            .y(d => yScale(d.value))
+            
+        const xAxis = d3.axisBottom(xScale)
+            .ticks(5, '%Y/%m/%d')
+        const yAxis = d3.axisLeft(yScale)
+
+        const bisect = d3.bisector(d => d.date).left
+        const resolveIndex = mx => {
+            const date = xScale.invert(mx)
+            const index = bisect(data, date)
+            if (index >= data.length ||
+                index === 0) {
+                return
+            }
+            const a = data[index - 1]
+            const b = data[index]
+            return date - a.date > b.date - date ? index : index - 1
         }
 
-        function dragended() {
-            d3.select(this).classed("datapoint", true);
-            // get id of dragged point
-            let id = d3.select(this).attr("id"),
-                // get new absolute position coordinates of the point
-                xPos = d3.select(this).attr("cx"),
-                yPos = h - d3.select(this).attr("cy");
+        drawLineChart()
+        drawPoints()
+        svg.append('text')
+            .text('(可拖动)')
+            .attr('class', 'tip')
+            .attr('x', 60)
+            .attr('y', 40)
 
-            // convert absolute position coordinates relative to scales
-            xPos = (xPos - padding) * (xMax / (w - padding * 2));
-            yPos = (yPos - padding) * (yMax / (h - padding * 2));
-            dataset[id][0] = xPos;
-            dataset[id][1] = yPos;
+        // svg.on('mousemove', function (d) {
+        //     const [x, y] = d3.mouse(this)
+        //     const i = resolveIndex(x)
+        //     d3.selectAll('.points-wrapper circle')
+        //         .attr('r', 4)
+        //     if (i !== undefined) {
+        //         d3.select(`.point-${i}`)
+        //             .attr('r', 8)
+        //     }
+        // })
 
-            // update line
-            svg
-                .select(".lineChart")
+        function setXyScale(data) {
+            // 设置坐标轴两侧留白
+            const min = new Date(+d3.min(data, d => d.date) - 50 * 24 * 3600 * 100)
+            const max = new Date(+d3.max(data, d => d.date) + 50 * 24 * 3600 * 100)
+            const xScale = d3.scaleTime()
+                .domain([min, max]) 
+                .range([margin.left, width - margin.right])
+            
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value) + 10])
+                .range([height - margin.bottom, margin.top])
+            
+            return {
+                xScale,
+                yScale
+            }
+        }
+
+        function drawLineChart() {
+            svg.append('g')
+                .call(xAxis)
+                .attr('transform', `translate(0, ${height - margin.bottom})`)
+            svg.append('g')
+                .call(yAxis)
+                .attr('transform', `translate(${margin.left})`)
+            
+            lineWrapper.append('path')
+                .attr('class', 'line')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', 'steelblue')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('d', line)
+                .style('opacity', 0)
                 .transition()
-                .duration(500)
-                .attr("d", lines(dataset));
+                .delay(500 + (data.length - 1) * 50)
+                .style('opacity', 1)
+                .duration(1000)
         }
 
+        function drawPoints() {
+            pointsWrapper.selectAll('circle')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', (_, i) => `point-${i}`)
+                .attr('r', 8)
+                .attr('stroke', 'steelblue')
+                .attr('fill', '#fff')
+                .attr('cx', d => xScale(d.date))
+                .attr('cy', -9)
+                .transition()
+                .delay((_, i) => i * 50 + 500)
+                .duration(1500)
+                .ease(d3.easeElastic)
+                .attr('cy', d => yScale(d.value))
+            
+            pointsWrapper.selectAll('circle')
+                .call(d3.drag()
+                    .on('start', function () {
+
+                    })
+                    .on('drag', function () {
+                        const {
+                            x,
+                            y
+                        } = d3.event
+                        d3.select(this)
+                            .attr('cx', x)
+                            .attr('cy', y)
+                    })
+                    .on('end', function () {
+                        const curPoint = d3.select(this)
+                        const x = curPoint.attr('cx')
+                        const y = curPoint.attr('cy')
+                        const index = curPoint.attr('class').split('-')[1]
+                        const date = xScale.invert(x)
+                        const value = yScale.invert(y)
+                        data[index] = {
+                            date,
+                            value
+                        }
+                        d3.select('path.line')
+                            .transition()
+                            .duration(500)
+                            .attr('d', line(data))
+                    })
+                )
+        }
     </script>
 </body>
-
 </html>
