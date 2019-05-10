@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  .frame {
+    fill: none;
+    stroke: #000;
+  }
+  
+  .axis text {
+    font: 10px sans-serif;
+  }
+  
+  .axis line,
+  .axis circle {
+    fill: none;
+    stroke: steelblue;
+    stroke-dasharray: 4;
+  }
+  
+  .axis:last-of-type circle {
+    stroke: steelblue;
+    stroke-dasharray: none;
+  }
+  
+  .line {
+    fill: none;
+    stroke: orange;
+    stroke-width: 3px;
+  }
+</style>
+
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <script>
+      var width = 960,
+          height = 500,
+          radius = Math.min(width, height) / 2 - 30;
+    
+    var data = [
+      [0, 0.4],
+      [6, 0.2],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+      [Math.random()*24, Math.random()],
+    ]
+
+    var y = _.map(data, _.last);
+    var max =  Math.max.apply(null, y);
+    max = Math.ceil(max*10)/10;
+
+    var angle = d3.scale.linear()
+        .domain([0, 24])
+        .range([0, 2 * Math.PI]);
+
+    var r = d3.scale.linear()
+          .domain([0, max])
+          .range([0, radius]);
+
+    var svg = d3.select("body").append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .append("g")
+          .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    var gr = svg.append("g")
+          .attr("class", "r axis")
+          .selectAll("g")
+          .data(r.ticks(max*10).slice(1))
+          .enter().append("g");
+
+    gr.append("circle")
+          .attr("r", r);
+
+    gr.append("text")
+        .attr("y", function(d) { return -r(d) - 4; })
+        .attr("transform", "rotate(20)")
+        .style("text-anchor", "middle")
+        .text(function(d) { return d; });
+
+    var ga = svg.append("g")
+          .attr("class", "a axis")
+          .selectAll("g")
+          .data(d3.range(-90, 270, 45))
+          .enter().append("g")
+          .attr("transform", function(d) {
+            return "rotate(" + d + ")";
+        });
+
+    ga.append("line")
+          .attr("x2", radius);
+     
+    ga.append("text")
+        .attr("x", radius + 6)
+        .attr("dy", ".35em")
+        .style("text-anchor", function(d) { return d < 270 && d > 90 ? "end" : null; })
+        .attr("transform", function(d) {
+            return d < 270 && d > 90 ? "rotate(180 " + (radius + 6) + ",0)" : null;
+        })
+        .text(function(d,i) { return i*3 + ":00" });
+
+    var color = d3.scale.category20();
+
+    var line = d3.svg.line.radial()
+          .angle(function(d) {
+            return angle(d[0]);
+          })
+          .radius(function(d) {
+            return r(d[1]);
+          });
+      
+
+    svg.selectAll("point")
+          .data(data)
+          .enter()
+          .append("circle")
+          .attr("class", "point")
+          .attr("transform", function(d) {
+            var coors = line([d]).slice(1).slice(0, -1);
+            return "translate(" + coors + ")"
+          })
+          .attr("r", 8)
+          .attr("fill",function(d,i){
+            return color(i);
+          });
+
+  </script>
