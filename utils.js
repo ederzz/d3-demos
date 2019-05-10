@@ -30,3 +30,14 @@ const pxStr2numberReg = /([0-9]+\.?[0-9]+)px/
 function tsPx2number(s) {
     return Number(pxStr2numberReg.exec(s)[1])
 }
+
+function calcWidthHeight(selector) {
+    const eve = d3.select(selector)
+    const w = eve.style('width')
+    const h = eve.style('height')
+
+    return [
+        tsPx2number(w),
+        tsPx2number(h)
+    ]
+}
