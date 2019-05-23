@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    body {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    svg#chart {
+        margin: auto;
+    }
+</style>
+
+<body>
+    <script src="https://d3js.org/d3-shape.v1.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        // https://echarts.baidu.com/examples/editor.html?c=line-polar
+
+        const width = 960
+        const height = 500
+        const svg = d3.select('body')
+            .append('svg')
+            .attr('id', 'chart')
+            .attr('width', width)
+            .attr('height', height)
+        
+        const rMax = Math.min(width, height) / 2 - 2
+        let moveGridLine
+
+        setPolarCoordinateSystem({
+            center: [width / 2, height / 2],
+            radius: rMax
+        })
+
+        function setPolarCoordinateSystem({
+            center,
+            radius
+        }) {
+            const r = getRadius(radius)
+            drawGridCircle(r)
+            drawGridLine(r)
+        }
+
+        function drawGridLine(r) {
+            const gridLines = svg.append('g')
+                .attr('class', 'grid-lines')
+            for (let i = 1; i < 13; i++) {
+                const [x, y] = calcPos(r, Math.PI / 6 * i)
+                gridLines.append('line')
+                    .attr('x1', width / 2)
+                    .attr('y1', height / 2)
+                    .attr('x2', width / 2 + x)
+                    .attr('y2', height / 2 + y)
+                    .attr('stroke-width', 1)
+                    .attr('stroke', '#dadada')
+            }
+        }
+
+        function drawGridCircle(r) {
+            const grid = svg.append('g')
+                .attr('class', 'grid-circles')
+                .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
+
+            for (let i = 1; i < 6; i++) {
+                grid.append('circle')
+                    .attr('cx', 0)
+                    .attr('cy', 0)
+                    .attr('r', r / 5 * i)
+                    .attr('stroke-width', '1')
+                    .attr('stroke', () => {
+                        console.log(i)
+                        if (i < 5) {
+                            return '#dadada'
+                        } else {
+                            return '#464646'
+                        }
+                    })
+                    .attr('fill', 'transparent')
+            }
+
+            svg.on('mousemove', e => {
+                const {
+                    x,
+                    y
+                } = d3.event
+                const xBorder = Math.abs(x - width / 2)
+                const yBorder = Math.abs(y - height / 2)
+                const radius = Math.sqrt(xBorder * xBorder + yBorder * yBorder)
+                if (moveGridLine) {
+                    moveGridLine.attr('r', radius)
+                    moveGridLine.attr('stroke', () => {
+                        if (radius > r) {
+                            return 'transparent'
+                        }
+                        return '#464646'
+                    })
+                } else {
+                    moveGridLine = grid
+                        .append('circle')
+                        .attr('cx', 0)
+                        .attr('cy', 0)
+                        .attr('r', radius)
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '5,5')
+                        .attr('stroke', () => {
+                            if (radius > r) {
+                                return 'transparent'
+                            }
+                            return '#464646'
+                        })
+                        .attr('fill', 'transparent')
+                }
+            })
+        }
+
+        function calcPos(radius, angle) {
+            return [
+                Math.sin(angle) * radius,
+                Math.cos(angle) * radius
+            ]
+        }
+
+        function getRadius(radius) {
+            const percentReg = /^(100|[1-9]?\d(\.\d*)?)%$/
+            let r = rMax
+            if (typeof radius === 'number' &&
+                radius > 0) {
+                r = radius
+            } else if (percentReg.test(radius)) {
+                r = Number(percentReg.exec(radius)[1]) * r / 100
+            }
+            return r
+        }
+
+    </script>
