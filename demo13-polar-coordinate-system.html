@@ -1,20 +1,28 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<style>
-    body {
-        display: flex;
-        width: 100vw;
-        height: 100vh;
-    }
+<html lang="en">
 
-    svg#chart {
-        margin: auto;
-    }
-</style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        svg#chart {
+            margin: auto;
+        }
+    </style>
+</head>
 
 <body>
     <script src="https://d3js.org/d3-shape.v1.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./mock/demo13.js"></script>
     <script>
         // https://echarts.baidu.com/examples/editor.html?c=line-polar
 
@@ -25,49 +33,118 @@
             .attr('id', 'chart')
             .attr('width', width)
             .attr('height', height)
-        
-        const rMax = Math.min(width, height) / 2 - 2
+            .append('g')
+            .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
+
+        let radius = Math.min(width, height) / 2 - 2
         let moveGridLine
 
-        setPolarCoordinateSystem({
+        drawPolarCsys({
             center: [width / 2, height / 2],
-            radius: rMax
+            r: radius
         })
+        drawLine(
+            mockData(radius)
+        )
+        drawLine2(
+            mockData(radius)
+        )
+        drawLine3(
+            mockData2()
+        )
 
-        function setPolarCoordinateSystem({
-            center,
-            radius
-        }) {
-            const r = getRadius(radius)
-            drawGridCircle(r)
-            drawGridLine(r)
+        function drawLine(data) {
+            const line = d3.lineRadial()
+                .angle(d => d.angle)
+                .radius(d => d.radius - radius / 2)
+
+            svg.append('g')
+                .append('path')
+                .attr('class', 'line')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', '#e91b1b')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('d', line)
         }
 
-        function drawGridLine(r) {
+        function drawLine2(data) {
+            const line = d3.line()
+                .x(d => Math.sin(d.angle) * d.radius)
+                .y(d => Math.cos(d.angle) * d.radius)
+
+            svg.append('g')
+                .append('path')
+                .attr('class', 'line')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', 'steelblue')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('d', line)
+        }
+
+        function drawLine3(data) {
+            const xScale = d3.scaleLinear()
+                .range([0, 2 * Math.PI])
+                .domain([0, d3.max(data, d => d.x)])
+
+            const yScale = d3.scaleLinear()
+                .range([0, radius / 4 * 3])
+                .domain([0, d3.max(data, d => d.y)])
+
+            const line = d3.line()
+                .x(d => Math.sin(xScale(d.x)) * yScale(d.y))
+                .y(d => Math.cos(xScale(d.x)) * yScale(d.y))
+
+            svg.append('g')
+                .append('path')
+                .attr('class', 'line')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', '#0ece8a')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('d', line)
+        }
+
+        function drawPolarCsys({
+            center,
+            r
+        }) {
+            setRadius(r)
+            drawGridCircle()
+            drawGridLine()
+        }
+
+        function drawGridLine() {
             const gridLines = svg.append('g')
                 .attr('class', 'grid-lines')
             for (let i = 1; i < 13; i++) {
-                const [x, y] = calcPos(r, Math.PI / 6 * i)
+                const [x, y] = calcPos(radius, Math.PI / 6 * i)
                 gridLines.append('line')
-                    .attr('x1', width / 2)
-                    .attr('y1', height / 2)
-                    .attr('x2', width / 2 + x)
-                    .attr('y2', height / 2 + y)
+                    .attr('x1', 2)
+                    .attr('y1', 2)
+                    .attr('x2', x)
+                    .attr('y2', y)
                     .attr('stroke-width', 1)
                     .attr('stroke', '#dadada')
             }
         }
 
-        function drawGridCircle(r) {
+        function drawGridCircle() {
             const grid = svg.append('g')
                 .attr('class', 'grid-circles')
-                .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
 
             for (let i = 1; i < 6; i++) {
                 grid.append('circle')
                     .attr('cx', 0)
                     .attr('cy', 0)
-                    .attr('r', r / 5 * i)
+                    .attr('r', radius / 5 * i)
                     .attr('stroke-width', '1')
                     .attr('stroke', () => {
                         console.log(i)
@@ -80,39 +157,39 @@
                     .attr('fill', 'transparent')
             }
 
-            svg.on('mousemove', e => {
-                const {
-                    x,
-                    y
-                } = d3.event
-                const xBorder = Math.abs(x - width / 2)
-                const yBorder = Math.abs(y - height / 2)
-                const radius = Math.sqrt(xBorder * xBorder + yBorder * yBorder)
-                if (moveGridLine) {
-                    moveGridLine.attr('r', radius)
-                    moveGridLine.attr('stroke', () => {
-                        if (radius > r) {
-                            return 'transparent'
-                        }
-                        return '#464646'
-                    })
-                } else {
-                    moveGridLine = grid
-                        .append('circle')
-                        .attr('cx', 0)
-                        .attr('cy', 0)
-                        .attr('r', radius)
-                        .attr('stroke-width', 1)
-                        .attr('stroke-dasharray', '5,5')
-                        .attr('stroke', () => {
-                            if (radius > r) {
-                                return 'transparent'
-                            }
-                            return '#464646'
-                        })
-                        .attr('fill', 'transparent')
-                }
-            })
+            // svg.on('mousemove', e => {
+            //     const {
+            //         x,
+            //         y
+            //     } = d3.event
+            //     const xBorder = Math.abs(x - width / 2)
+            //     const yBorder = Math.abs(y - height / 2)
+            //     const r = Math.sqrt(xBorder * xBorder + yBorder * yBorder)
+            //     if (moveGridLine) {
+            //         moveGridLine.attr('r', radius)
+            //         moveGridLine.attr('stroke', () => {
+            //             if (r > radius) {
+            //                 return 'transparent'
+            //             }
+            //             return '#464646'
+            //         })
+            //     } else {
+            //         moveGridLine = grid
+            //             .append('circle')
+            //             .attr('cx', 0)
+            //             .attr('cy', 0)
+            //             .attr('r', r)
+            //             .attr('stroke-width', 1)
+            //             .attr('stroke-dasharray', '5,5')
+            //             .attr('stroke', () => {
+            //                 if (r > radius) {
+            //                     return 'transparent'
+            //                 }
+            //                 return '#464646'
+            //             })
+            //             .attr('fill', 'transparent')
+            //     }
+            // })
         }
 
         function calcPos(radius, angle) {
@@ -122,16 +199,17 @@
             ]
         }
 
-        function getRadius(radius) {
+        function setRadius(r) {
             const percentReg = /^(100|[1-9]?\d(\.\d*)?)%$/
-            let r = rMax
-            if (typeof radius === 'number' &&
-                radius > 0) {
-                r = radius
+            if (typeof r === 'number' &&
+                r > 0) {
+                radius = r
             } else if (percentReg.test(radius)) {
-                r = Number(percentReg.exec(radius)[1]) * r / 100
+                radius = Number(percentReg.exec(r)[1]) * r / 100
             }
-            return r
         }
 
     </script>
+</body>
+
+</html>
