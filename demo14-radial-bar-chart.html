@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #radial-bar-chart {
+            margin: auto;
+            position: relative;
+            box-shadow: 0 0 10px 0 #eee;
+        }
+
+        .tooltip {
+            position: absolute;
+            left: 0;
+            top: 0;
+            box-shadow: 0 0 10px 0 #ccc;
+            width: 200px;
+            height: 100px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            padding: 15px 10px;
+            color: #606060;
+            opacity: 0;
+            background-color: #fff;
+        }
+
+        .tooltip > .province {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="radial-bar-chart"></div>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const provinces = [
+            '北京市',
+            '天津市',
+            '上海市',
+            '重庆市',
+            '河北省',
+            '河南省',
+            '云南省',
+            '辽宁省',
+            '黑龙江省',
+            '湖南省',
+            '安徽省',
+            '山东省',
+            '新疆维吾尔',
+            '江苏省',
+            '浙江省',
+            '江西省',
+            '湖北省',
+            '广西壮族',
+            '甘肃省',
+            '山西省',
+            '内蒙古',
+            '陕西省',
+            '吉林省',
+            '福建省',
+            '贵州省',
+            '广东省',
+            '青海省',
+            '西藏',
+            '四川省',
+            '宁夏回族',
+            '海南省',
+            '台湾省',
+            '香港特别行政区',
+            '澳门特别行政区'
+        ]
+
+        const width = 800
+        const height = 600
+        const innerRadius = 5
+        const outerRadius = 200
+        const data = randomData()
+        const chartColor = 'rgba(22, 123, 225, .8)'
+        const fontColor = '#606060'
+        const gridLineColor = 'rgb(210, 214, 218)'
+
+        const radiusScale = d3.scaleLinear()
+            .range([0, outerRadius - 10])
+            .domain([0, d3.max(data, d => d.population)])
+
+        // 通过arc函数生成原型或圆环
+        const arc = d3.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius)
+            .padAngle(Math.PI / 400)
+
+        const svg = d3.select('#radial-bar-chart')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .append('g')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+
+        drawGrid()
+        svg.append('g')
+            .attr('class', 'x-axis')
+            .call(xAxis)
+        
+        // 饼图数据
+        const pieData = d3.pie().value(d => 10)(data)
+
+        const arcs = svg
+            .append('g')
+            .attr('class', 'arcs')
+            .selectAll('g')
+            .data(pieData)
+            .enter()
+            .append('path')
+            .attr('fill', chartColor)
+            .attr('d', function (d) {
+                // 动态设定外半径
+                arc.outerRadius(radiusScale(d.data.population))
+                // 注册path data
+                return arc(d)
+            })
+
+        function xAxis(g) {
+            // 计算x轴标签位置
+            const xLabel = d3.scaleBand()
+                .domain(data.map(d => d.province))
+                .range([0, 2 * Math.PI])
+
+            g.attr('class', 'x-axis')
+            .attr('text-anchor', 'start')
+            .attr('dominant-baseline', 'middle')
+            .attr('stroke', fontColor)
+            .attr('stroke-width', 1)
+            .style('font-size', 14)
+            .style('font-weight', 100)
+            .call(g => {
+                g.selectAll('g')
+                    .data(data)
+                    .enter()
+                    .append('g')
+                    .attr('transform', d => {
+                        const rotateAngle = tsRadian2angle(xLabel(d.province) + xLabel.bandwidth() / 2) - 90
+
+                        return `
+                            rotate(${ (rotateAngle) })
+                            translate(${ outerRadius + 5 }, 0)
+                        `
+                    })
+                    .call(g => {
+                        g.append('line')
+                            .attr('x2', -5)
+
+                        g.append('text')
+                            .text(d => d.province)
+                            .attr('transform', function (d) {
+                                // const _this = d3.select(this) TODO:
+                                // const val = tsRadian2angle(xLabel(d.province) + xLabel.bandwidth() / 2) > 180
+                                //     ? `rotate(180) translate(-30, 0)`
+                                //     : ''
+                                // return val
+                            })
+                    })
+            })
+        }
+        
+        function drawGrid() {
+            const gridWrapper = svg.append('g')
+                .attr('class', 'grid-wrapper')
+                .attr('fill', 'transparent')
+                .attr('stroke', gridLineColor)
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '5,5')
+
+            for (let i = 1; i <= 6; i++) {
+                gridWrapper.append('circle')
+                    .attr('r', outerRadius / 6 * i)
+            }
+
+            const bandWidth = 2 * Math.PI / data.length
+
+            for (let i = 0; i < data.length; i++) {
+                const x = outerRadius * Math.sin( bandWidth * i + bandWidth / 2)
+                const y = outerRadius * Math.cos( bandWidth * i + bandWidth / 2)
+                gridWrapper.append('line')
+                    .attr('x2',  x)
+                    .attr('y2',  y)
+            }
+        }
+        
+        // 转换弧度值为角度
+        function tsRadian2angle(radian) {
+            return radian * 180 / Math.PI
+        }
+        
+        function randomData() {
+            const data = []
+            for (const p of provinces) {
+                data.push({
+                    province: p,
+                    population: Math.random() * 40000000 + 30000000 >>> 0
+                })
+            }
+            data.sort((a, b) => b.population - a.population)
+            return data
+        }
+
+        const toolTip = d3.select('#radial-bar-chart')
+            .append('div')
+            .attr('class', 'tooltip')
+
+        toolTip.html(
+            `
+                <div class="province">
+                </div>
+                <div class="population">
+                    <span>population</span>
+                    <span class="value"></span>
+                </div>
+            `
+        )
+
+        arcs.on('mousemove', e => {
+            const svg = document.querySelector('svg')
+            const [x, y] = d3.mouse(svg)
+            toolTip.style('opacity', 1)
+            toolTip.style('left', `${ x }px`)
+            toolTip.style('top', `${ y }px`)
+            toolTip.select('.province').text('四川省')
+            toolTip.select('.population .value').text('10000')
+        })
+
+        svg.on('mouseout', () => {
+            toolTip.style('opacity', 0)
+        })
+
+
+        // TODO: text翻转  内半径颜色 hover抖动 使用path画tooltip
+    </script>
+</body>
+</html>
