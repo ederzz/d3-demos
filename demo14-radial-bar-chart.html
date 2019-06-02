@@ -107,27 +107,32 @@
             .attr('transform', `translate(${width / 2}, ${height / 2})`)
 
         drawGrid()
+        drawChart()
         svg.append('g')
             .attr('class', 'x-axis')
             .call(xAxis)
+        renderToolTip()
         
-        // 饼图数据
-        const pieData = d3.pie().value(d => 10)(data)
+        function drawChart() {
+            // 饼图数据
+            const pieData = d3.pie().value(d => 10)(data)
 
-        const arcs = svg
-            .append('g')
-            .attr('class', 'arcs')
-            .selectAll('g')
-            .data(pieData)
-            .enter()
-            .append('path')
-            .attr('fill', chartColor)
-            .attr('d', function (d) {
-                // 动态设定外半径
-                arc.outerRadius(radiusScale(d.data.population))
-                // 注册path data
-                return arc(d)
-            })
+            const arcs = svg
+                .append('g')
+                .attr('class', 'arcs')
+                .selectAll('g')
+                .data(pieData)
+                .enter()
+                .append('path')
+                .attr('class', 'arc')
+                .attr('fill', chartColor)
+                .attr('d', function (d) {
+                    // 动态设定外半径
+                    arc.outerRadius(radiusScale(d.data.population))
+                    // 注册path data
+                    return arc(d)
+                })
+        }
 
         function xAxis(g) {
             // 计算x轴标签位置
@@ -172,6 +177,7 @@
             })
         }
         
+        // 绘制背景网格
         function drawGrid() {
             const gridWrapper = svg.append('g')
                 .attr('class', 'grid-wrapper')
@@ -205,12 +211,47 @@
                     .attr('y2',  y)
             }
         }
+
+        function renderToolTip() {
+            // 设置tooltip
+            const toolTip = d3.select('#radial-bar-chart')
+                .append('div')
+                .attr('class', 'tooltip')
+
+            toolTip.html(
+                `
+                    <div class="province">
+                    </div>
+                    <div class="population">
+                        <span>population</span>
+                        <span class="value"></span>
+                    </div>
+                `
+            )
+
+            // 设置mousemove事件
+            d3.selectAll('.arc')
+                .on('mousemove', e => {
+                const svg = document.querySelector('svg')
+                const [x, y] = d3.mouse(svg)
+                toolTip.style('opacity', 1)
+                toolTip.style('left', `${ x + 50 }px`)
+                toolTip.style('top', `${ y + 50 }px`)
+                toolTip.select('.province').text('四川省')
+                toolTip.select('.population .value').text('10000')
+            })
+
+            svg.on('mouseout', () => {
+                toolTip.style('opacity', 0)
+            })
+        }
         
         // 转换弧度值为角度
         function tsRadian2angle(radian) {
             return radian * 180 / Math.PI
         }
         
+        // gen random data
         function randomData() {
             const data = []
             for (const p of provinces) {
@@ -222,35 +263,6 @@
             data.sort((a, b) => b.population - a.population)
             return data
         }
-
-        const toolTip = d3.select('#radial-bar-chart')
-            .append('div')
-            .attr('class', 'tooltip')
-
-        toolTip.html(
-            `
-                <div class="province">
-                </div>
-                <div class="population">
-                    <span>population</span>
-                    <span class="value"></span>
-                </div>
-            `
-        )
-
-        arcs.on('mousemove', e => {
-            const svg = document.querySelector('svg')
-            const [x, y] = d3.mouse(svg)
-            toolTip.style('opacity', 1)
-            toolTip.style('left', `${ x + 50 }px`)
-            toolTip.style('top', `${ y + 50 }px`)
-            toolTip.select('.province').text('四川省')
-            toolTip.select('.population .value').text('10000')
-        })
-
-        svg.on('mouseout', () => {
-            toolTip.style('opacity', 0)
-        })
 
         // TODO: 内半径颜色
     </script>
