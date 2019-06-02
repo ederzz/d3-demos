@@ -85,7 +85,7 @@
         const innerRadius = 5
         const outerRadius = 200
         const data = randomData()
-        const chartColor = 'rgba(22, 123, 225, .8)'
+        const chartColor = 'rgba(7, 92, 214, .7)'
         const fontColor = '#606060'
         const gridLineColor = 'rgb(210, 214, 218)'
 
@@ -161,12 +161,12 @@
 
                         g.append('text')
                             .text(d => d.province)
-                            .attr('transform', function (d) {
-                                // const _this = d3.select(this) TODO:
-                                // const val = tsRadian2angle(xLabel(d.province) + xLabel.bandwidth() / 2) > 180
-                                //     ? `rotate(180) translate(-30, 0)`
-                                //     : ''
-                                // return val
+                            .attr('transform', function (d, i) {
+                                // 通过getBBox访问到text元素的长度
+                                const val = tsRadian2angle(xLabel(d.province) + xLabel.bandwidth() / 2) > 180
+                                    ? `rotate(180) translate(${ -this.getBBox().width - 10 }, 0)`
+                                    : 'translate(10, 0)'
+                                return val
                             })
                     })
             })
@@ -179,10 +179,20 @@
                 .attr('stroke', gridLineColor)
                 .attr('stroke-width', 1)
                 .attr('stroke-dasharray', '5,5')
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', 12)
+                .style('font-weight', 100)
+
+            const maxPopulation = d3.max(data, d => d.population) * outerRadius / ( outerRadius - 10 )
 
             for (let i = 1; i <= 6; i++) {
+                const n = maxPopulation / 6 * i >>> 0
                 gridWrapper.append('circle')
                     .attr('r', outerRadius / 6 * i)
+                gridWrapper.append('text')
+                    .text(n)
+                    .attr('transform', `translate(0, ${ -outerRadius / 6 * i })`)
             }
 
             const bandWidth = 2 * Math.PI / data.length
@@ -232,8 +242,8 @@
             const svg = document.querySelector('svg')
             const [x, y] = d3.mouse(svg)
             toolTip.style('opacity', 1)
-            toolTip.style('left', `${ x }px`)
-            toolTip.style('top', `${ y }px`)
+            toolTip.style('left', `${ x + 50 }px`)
+            toolTip.style('top', `${ y + 50 }px`)
             toolTip.select('.province').text('四川省')
             toolTip.select('.population .value').text('10000')
         })
@@ -242,8 +252,7 @@
             toolTip.style('opacity', 0)
         })
 
-
-        // TODO: text翻转  内半径颜色 hover抖动 使用path画tooltip
+        // TODO: 内半径颜色
     </script>
 </body>
 </html>
