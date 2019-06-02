@@ -10,3 +10,5 @@ D3.js-demos.
 - [demo 10](https://shenyiling.github.io/d3-demos/demo10-draggable-line-chart.html)
 - [demo 11](https://shenyiling.github.io/d3-demos/demo11-hexbin-heatmap.html)
 - [demo 12](https://shenyiling.github.io/d3-demos/demo12-export-png.html)
+- [demo 13](https://shenyiling.github.io/d3-demos/demo13-polar-coordinate-system.html)
+- [demo 14](https://shenyiling.github.io/d3-demos/demo14-radial-bar-chart.html)
