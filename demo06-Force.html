@@ -22,9 +22,10 @@
 <body>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-force.v1.min.js"></script>
+    <script src="./mock/demo06.js"></script>
     <script>
-        const width = 600
-        const height = 600
+        const width = 800
+        const height = 800
         const colors = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
 
         const svg = d3.select('body')
@@ -33,89 +34,94 @@
             .attr('height', height)
             .attr('class', 'chart')
 
-        const nodes = [
-            { name: "GuiLin" },
-            { name: "GuangZhou" },
-            { name: "XiaMen" },
-            { name: "HangZhou" },
-            { name: "ShangHai" },
-            { name: "QingDao" },
-            { name: "TianJin" },
-            { name: "BeiJing" },
-            { name: "ChangChun" },
-            { name: "XiAn" },
-            { name: "WuluMuQi" },
-            { name: "LaSa" },
-            { name: "ChengDu" }];
-
-        const edges = [
-            { source: 0, target: 1 },
-            { source: 1, target: 2 },
-            { source: 2, target: 3 },
-            { source: 3, target: 4 },
-            { source: 4, target: 5 },
-            { source: 5, target: 6 },
-            { source: 6, target: 7 },
-            { source: 7, target: 8 },
-            { source: 8, target: 9 },
-            { source: 9, target: 10 },
-            { source: 10, target: 11 },
-            { source: 11, target: 12 },
-            { source: 12, target: 0 }]
-
-        const force = d3.forceSimulation(nodes)
+        const simulation = d3.forceSimulation()
             .force("charge", d3.forceManyBody())
-            .force("link", d3.forceLink(edges))
+            .force("link", d3.forceLink())
             .force("center", d3.forceCenter())
+            .force("collision", d3.forceCollide(20).iterations(10))
+        simulation.alphaDecay(0.05) // 衰减系数，值越大，布局稳定就越快
+        // aplha alpha 参数。这个值最开始是 1，随着图形趋于稳定，它也会逐渐趋近 0。
+        // alphaTarget 
+        simulation.nodes(nodes)
+            .on('tick', ticked) // 力导向图不断运动，更新位置，每次tick结束，节点的 x(y) 被设置为 fx(fy) 的值
+            console.log(nodes)
 
-        svg.selectAll('line')
+        simulation.force('charge')
+            .strength(10)
+
+        simulation.force('link')
+            .id(d => d.id) // set id getter
+            .links(edges)
+            .distance(d => {
+                return 10
+            })
+            .strength(() => 0.6)
+
+        simulation.force('center')
+            .x(width / 2)
+            .y(height / 2)
+
+        const links = svg.append('g')
+            .selectAll('line')
             .data(edges)
             .enter()
             .append('line')
-            .style('stroke', '#ccc')
-            .style('stroke-width', 1)
+            .attr('stroke', () => 'red')
+            .attr('stroke-width', 1)
 
-        svg.selectAll('circle')
+        const nodesOfForce = svg.append('g')
+            .selectAll('circle')
             .data(nodes)
             .enter()
             .append('circle')
             .attr('r', 10)
-            .style("fill", function (d, i) {
-                return colors[i]
-            })
-            .call(d3.drag().on("start", dragstarted)
+            .attr('fill', () => 'green')
+            .call(d3.drag()
+                .on("start", started)
                 .on("drag", dragged)
-                .on("end", dragended))
-
-        function dragstarted(d) {
-            if (!d3.event.active) force.alphaTarget(0.3).restart();//设置目标α
-            d.fx = d.x;
-            d.fy = d.y;
+                .on("end", ended)
+            )
+        let dragId = ''
+        function started(d) {
+            console.log(d)
+            dragId = d.id
+            if (!d3.event.active) {
+                simulation.alphaTarget(.2).restart()
+                // console.log(simulation.alpha(), 'alpha')
+            }
+            d.fx = d.x // fx fy 表示节点一下次节点被固定的位置
+            d.fy = d.y
         }
 
         function dragged(d) {
-            d.fx = d3.event.x;
-            d.fy = d3.event.y;
+            d.fx = d3.event.x
+            d.fy = d3.event.y
         }
 
-        function dragended(d) {
-            if (!d3.event.active) force.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
+        function ended(d) {
+            // console.log(simulation.alphaTarget(0), simulation.alpha())
+            if (!d3.event.active) {
+                simulation.alphaTarget(0)
+            }
+            d.fx = null
+            d.fy = null
+            console.log('end', d.fx, d.fy)
         }
+        let i = 0
         function ticked() {
-            svg_links.attr("x1", function (d) { return d.source.x; })
-                .attr("y1", function (d) { return d.source.y; })
-                .attr("x2", function (d) { return d.target.x; })
-                .attr("y2", function (d) { return d.target.y; });
+            // if (simulation.alpha() >= 0.1) {
+            //     return 
+            // }
+            console.log(simulation.alpha())
+            links.attr('x1', function (d) { return d.source.x })
+                .attr('y1', function (d) { return d.source.y })
+                .attr('x2', function (d) { return d.target.x })
+                .attr('y2', function (d) { return d.target.y })
 
-            svg_nodes.attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-
-            svg_texts.attr("x", function (d) { return d.x; })
-                .attr("y", function (d) { return d.y; });
+            nodesOfForce.attr('cx', function (d) { return d.x })
+                .attr('cy', function (d) { return d.y })
         }
-            // .call(force.drag)
+        // charge 和 link  的strength distance 作用
     </script>
 </body>
 
