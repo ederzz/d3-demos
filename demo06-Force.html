@@ -22,13 +22,13 @@
 <body>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-force.v1.min.js"></script>
-    <script src="https://d3js.org/d3-color.v1.min.js"></script>
     <script src="./mock/demo06.js"></script>
     <script>
-        const width = 800
-        const height = 800
-        const colors = d3.schemeSet3
-        console.log(colors)
+        const width = window.innerWidth
+        const height = window.innerHeight
+        const root = d3.hierarchy(data)
+        const nodes = root.descendants()
+        const links = root.links()
 
         const svg = d3.select('body')
             .append('svg')
@@ -36,52 +36,52 @@
             .attr('height', height)
             .attr('class', 'chart')
 
-        const simulation = d3.forceSimulation()
-            .force("charge", d3.forceManyBody())
-            .force("link", d3.forceLink())
-            .force("center", d3.forceCenter())
-            .force("collision", d3.forceCollide(20).iterations(10)) // 防止重叠
+        const simulation = d3.forceSimulation(nodes)
+            .force('charge', d3.forceManyBody())
+            .force('link', d3.forceLink(links))
+            .force('center', d3.forceCenter())
+            .force('x', d3.forceX())
+            .force('y', d3.forceY());
     
-        simulation.alphaDecay(0.05) // 衰减系数，值越大，布局稳定就越快
-        // aplha alpha 参数。这个值最开始是 1，随着图形趋于稳定，它也会逐渐趋近 0。
-        // alphaTarget 
-        simulation.nodes(nodes)
-            .on('tick', ticked) // 力导向图不断运动，更新位置，每次tick结束，节点的 x(y) 被设置为 fx(fy) 的值
-
+        simulation.alphaDecay(0.05) 
         simulation.force('charge')
-            .strength(-100)
+            .strength(-50)
         simulation.force('link')
             .id(d => d.id) // set id getter
-            .links(edges)
-            .distance(d => {
-                return 30
-            })
-            // .strength(() => 0.6)
+            .distance(0) // 连接距离
+            .strength(1) // 连接强度
+            .iterations(1)
+
         simulation.force('center')
             .x(width / 2)
             .y(height / 2)
 
         const simulationLinks = svg.append('g')
             .selectAll('line')
-            .data(edges)
+            .data(links)
             .enter()
             .append('line')
-            .attr('stroke', () => '#c2c2c2')
-            .attr('stroke-width', d => Math.sqrt(d.value))
+            .attr('stroke', d => '#c2c2c2')
 
         const simulationNodes = svg.append('g')
+            .attr('fill', '#fff')
+            .attr('stroke', '#000')
+            .attr('stroke-width', 1.5)
             .selectAll('circle')
             .data(nodes)
             .enter()
             .append('circle')
-            .attr('r', 10)
-            .attr('fill', d => colors[d.group])
+            .attr('r', 3.5)
+            .attr('fill', d => d.children ? null : '#000') // 叶子节点黑底白边，父节点白底黑边
+            .attr('stroke', d => d.children ? null : '#fff')
             .call(d3.drag()
                 .on('start', started)
                 .on('drag', dragged)
                 .on('end', ended)
             )
-    
+        
+        simulation.on('tick', ticked) 
+       
         function started(d) {
             if (!d3.event.active) {
                 simulation.alphaTarget(.2).restart()
@@ -101,7 +101,6 @@
             }
             d.fx = null
             d.fy = null
-            console.log('end', d.fx, d.fy)
         }
 
         function ticked() {
