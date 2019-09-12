@@ -47,9 +47,9 @@
             .strength(-50)
         simulation.force('link')
             .id(d => d.id) // set id getter
-            .distance(0) // 连接距离
+            .distance(0) // 连接距离，就是边的长度，但是这是一个近似值，设置为10不一定有10px
             .strength(1) // 连接强度
-            .iterations(1)
+            .iterations(1) // 迭代次数，每次tick中模拟连接力的次数
 
         const simulationLinks = svg.append('g')
             .selectAll('line')
