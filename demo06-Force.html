@@ -39,9 +39,8 @@
         const simulation = d3.forceSimulation(nodes)
             .force('charge', d3.forceManyBody())
             .force('link', d3.forceLink(links))
-            .force('center', d3.forceCenter())
-            .force('x', d3.forceX())
-            .force('y', d3.forceY());
+            .force('x', d3.forceX(width / 2))
+            .force('y', d3.forceY(height / 2))
     
         simulation.alphaDecay(0.05) 
         simulation.force('charge')
@@ -51,10 +50,6 @@
             .distance(0) // 连接距离
             .strength(1) // 连接强度
             .iterations(1)
-
-        simulation.force('center')
-            .x(width / 2)
-            .y(height / 2)
 
         const simulationLinks = svg.append('g')
             .selectAll('line')
@@ -79,8 +74,6 @@
                 .on('drag', dragged)
                 .on('end', ended)
             )
-        
-        simulation.on('tick', ticked) 
        
         function started(d) {
             if (!d3.event.active) {
@@ -102,6 +95,8 @@
             d.fx = null
             d.fy = null
         }
+
+        simulation.on('tick', ticked) 
 
         function ticked() {
             simulationLinks.attr('x1', d => d.source.x )
