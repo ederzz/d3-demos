@@ -22,11 +22,13 @@
 <body>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-force.v1.min.js"></script>
+    <script src="https://d3js.org/d3-color.v1.min.js"></script>
     <script src="./mock/demo06.js"></script>
     <script>
         const width = 800
         const height = 800
-        const colors = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
+        const colors = d3.schemeSet3
+        console.log(colors)
 
         const svg = d3.select('body')
             .append('svg')
@@ -38,56 +40,51 @@
             .force("charge", d3.forceManyBody())
             .force("link", d3.forceLink())
             .force("center", d3.forceCenter())
-            .force("collision", d3.forceCollide(20).iterations(10))
+            .force("collision", d3.forceCollide(20).iterations(10)) // 防止重叠
+    
         simulation.alphaDecay(0.05) // 衰减系数，值越大，布局稳定就越快
         // aplha alpha 参数。这个值最开始是 1，随着图形趋于稳定，它也会逐渐趋近 0。
         // alphaTarget 
         simulation.nodes(nodes)
             .on('tick', ticked) // 力导向图不断运动，更新位置，每次tick结束，节点的 x(y) 被设置为 fx(fy) 的值
-            console.log(nodes)
 
         simulation.force('charge')
-            .strength(10)
-
+            .strength(-100)
         simulation.force('link')
             .id(d => d.id) // set id getter
             .links(edges)
             .distance(d => {
-                return 10
+                return 30
             })
-            .strength(() => 0.6)
-
+            // .strength(() => 0.6)
         simulation.force('center')
             .x(width / 2)
             .y(height / 2)
 
-        const links = svg.append('g')
+        const simulationLinks = svg.append('g')
             .selectAll('line')
             .data(edges)
             .enter()
             .append('line')
-            .attr('stroke', () => 'red')
-            .attr('stroke-width', 1)
+            .attr('stroke', () => '#c2c2c2')
+            .attr('stroke-width', d => Math.sqrt(d.value))
 
-        const nodesOfForce = svg.append('g')
+        const simulationNodes = svg.append('g')
             .selectAll('circle')
             .data(nodes)
             .enter()
             .append('circle')
             .attr('r', 10)
-            .attr('fill', () => 'green')
+            .attr('fill', d => colors[d.group])
             .call(d3.drag()
-                .on("start", started)
-                .on("drag", dragged)
-                .on("end", ended)
+                .on('start', started)
+                .on('drag', dragged)
+                .on('end', ended)
             )
-        let dragId = ''
+    
         function started(d) {
-            console.log(d)
-            dragId = d.id
             if (!d3.event.active) {
                 simulation.alphaTarget(.2).restart()
-                // console.log(simulation.alpha(), 'alpha')
             }
             d.fx = d.x // fx fy 表示节点一下次节点被固定的位置
             d.fy = d.y
@@ -99,7 +96,6 @@
         }
 
         function ended(d) {
-            // console.log(simulation.alphaTarget(0), simulation.alpha())
             if (!d3.event.active) {
                 simulation.alphaTarget(0)
             }
@@ -107,21 +103,16 @@
             d.fy = null
             console.log('end', d.fx, d.fy)
         }
-        let i = 0
-        function ticked() {
-            // if (simulation.alpha() >= 0.1) {
-            //     return 
-            // }
-            console.log(simulation.alpha())
-            links.attr('x1', function (d) { return d.source.x })
-                .attr('y1', function (d) { return d.source.y })
-                .attr('x2', function (d) { return d.target.x })
-                .attr('y2', function (d) { return d.target.y })
 
-            nodesOfForce.attr('cx', function (d) { return d.x })
-                .attr('cy', function (d) { return d.y })
+        function ticked() {
+            simulationLinks.attr('x1', d => d.source.x )
+                .attr('y1', d => d.source.y )
+                .attr('x2', d => d.target.x )
+                .attr('y2', d => d.target.y )
+
+            simulationNodes.attr('cx', d => d.x )
+                .attr('cy', d => d.y )
         }
-        // charge 和 link  的strength distance 作用
     </script>
 </body>
 
