@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./utils.js"></script>
+    <script>
+        const width = window.innerWidth
+        const height = window.innerHeight
+        const svg = createSvg(width, height)
+        
+        const circle = svg.append('circle')
+            .attr('r', 40)
+            .attr('fill', 'red')
+            .call(
+                d3.drag()
+                    .on('start', () => {})
+                    .on('end', () => {})
+                    .on('drag', draged)
+            )
+
+        function draged() {
+            const {
+                x,
+                y
+            } = d3.event
+            d3.select(this)
+                .attr('cx', x)
+                .attr('cy', y)
+        }
+    </script>
+</body>
+</html>

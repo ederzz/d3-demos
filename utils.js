@@ -41,3 +41,12 @@ function calcWidthHeight(selector) {
         tsPx2number(h)
     ]
 }
+
+function createSvg(w, h) {
+    return d3.select('body')
+        .append('svg')
+        .attr('width', w)
+        .attr('height', h)
+        .append('g')
+        .attr('transform', `translate(${ w / 2 }, ${ h / 2 })`)
+}
