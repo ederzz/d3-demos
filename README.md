@@ -15,3 +15,4 @@ D3.js-demos.
 - [极坐标系线图](https://shenyiling.github.io/d3-demos/demo13-polar-coordinate-system.html)
 - [radial-bar-chart 极坐标系柱状图](https://shenyiling.github.io/d3-demos/demo14-radial-bar-chart.html)
 - [d3.drag](https://shenyiling.github.io/d3-demos/demo15-drag.html)
+- [drag-to-re-arrange](https://shenyiling.github.io/d3-demos/demo16-drag-re-arrange.html)

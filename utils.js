@@ -42,7 +42,7 @@ function calcWidthHeight(selector) {
     ]
 }
 
-function createSvg(w, h) {
+function createSvg(w = window.innerWidth, h = window.innerHeight) {
     return d3.select('body')
         .append('svg')
         .attr('width', w)

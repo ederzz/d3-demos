@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        rect {
+            opacity: .7;
+        }
+
+        rect.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./utils.js"></script>
+    <script>
+        const color = d3.scaleOrdinal(d3.schemePaired)
+        const width = 60
+        const n = 10
+        const svg = createSvg()
+            .attr('transform', `translate(${ window.innerWidth / 2 - 300 }, ${ window.innerHeight / 2 - 300 })`)
+        const data = new Array(100).fill(1).map((_, i) => i)
+        const rects = svg.selectAll('rect')
+            .data(data)
+            .enter()
+            .append('rect')
+            .attr('width', width)
+            .attr('height', width)
+            .attr('fill', function (_, i) {
+                this.position = i
+                return color(i)
+            })
+            .attr('x', function (d, i) {
+                return placeX(i)
+            })
+            .attr('y', function (d, i) {
+                return placeY(i)
+            })
+            .call(
+                d3.drag()
+                    .on('start', start)
+                    .on('end', end)
+                    .on('drag', draged)
+            )
+            
+        let deviationX, deviationY // 鼠标点击位置距离左上角的偏差
+        let positionOfDrag // 拖拽元素的位置
+
+        function start() {
+            const current = d3.select(this)
+            deviationX = current.attr('x') - d3.event.x
+            deviationY = current.attr('y') - d3.event.y
+            current.attr('class', 'active')
+            positionOfDrag = this.position
+        }
+
+        function draged(d) {
+            const { x, y } = d3.event
+            const currentX = limitXy( x + deviationX )
+            const currentY = limitXy( y + deviationY )
+            const newPosition = Math.round(currentX / width) + Math.round(currentY / width) * n
+            d3.select(this)
+                .attr('x', currentX)
+                .attr('y', currentY)
+
+            if (newPosition === positionOfDrag) {
+                return null
+            } else {
+                rects.each(function (e) {
+                    if (e !== d && this.position === newPosition) { // 找到与之交换位置的元素 移动
+                        this.position = positionOfDrag
+                        positionOfDrag = newPosition
+                        d3.select(this)
+                            .transition()
+                            .attr('x', placeX(this.position))
+                            .attr('y', placeY(this.position))
+                    }
+                })
+            }
+        }
+
+        function end() {
+            this.position = positionOfDrag
+            positionOfDrag = -1
+            d3.select(this)
+                .attr('class', '')
+                .transition()
+                .attr('x', placeX(this.position))
+                .attr('y', placeY(this.position))
+        }
+
+        function placeX(i) {
+            return i % n * width
+        }
+
+        function placeY(i) {
+            return (i / n | 0) * width
+        }
+
+        function limitXy(val) { // 限制拖拽方块出界
+            return Math.min(
+                Math.max(0, val),
+                540
+            )
+        }
+    </script>
+</body>
+</html>
