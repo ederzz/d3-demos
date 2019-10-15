@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: #32333b;
+            min-height: 100vh;
+            min-width: 100vw;
+        }
+        .graphs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .graph {
+            text-align: center;
+            color: transparent;
+        }
+        .graph:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="graphs"></div>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-hierarchy.v1.min.js"></script>
+    <script>
+        const data = {
+            "name": "A1",
+            "children": [
+                {
+                    "name": "B1",
+                    "children": [
+                        {
+                            "name": "C1",
+                            "value": 100
+                        },
+                        {
+                            "name": "C2",
+                            "value": 300
+                        },
+                        {
+                            "name": "C3",
+                            "value": 200
+                        }
+                    ]
+                },
+                {
+                    "name": "B2",
+                    "value": 200
+                }
+            ]
+        }
+        const config = {
+            viewBox: '0 0 400 240',
+            bgOfNode: '#696969',
+            lineStroke: '#5f5f5f',
+            nodeRadius: 14,
+            graphSize: [400, 200],
+            treeMapBg: 'rgba(255,255,255,0.2)',
+            treeMapStroke: '#2f2f2f',
+            mouseOverBg: 'rgba(93, 235, 155, .4)'
+        }
+        const root = d3.hierarchy(data)
+        root.sum(d => d.value)
+
+        const graphLayouts = [ 'cluster', 'tree', 'treemap', 'partition', 'sunburst', 'pack' ]
+        graphLayouts.forEach( addGraph )
+
+        drawClusterLayout()
+        drawTreeLayout()
+        drawTreeMapLayout()
+        drawPartitionLayout()
+        drawSunburstLayout()
+        drawPackLayout()
+        bindMouseOverEvt()
+
+        // create graphs.
+        function addGraph(layout) {
+            const name = layout + '-layout'
+            const graphContainer = d3.select('.graphs')
+                .append('div')
+                .attr('class', 'graph')
+            
+            graphContainer.append('svg')
+                .attr('viewBox', config.viewBox)
+                .attr('id', name)
+                .attr('width', 400)
+                .attr('height', 200)
+                .append('g')
+                .attr('transform', 'translate(0,20)')
+                .selectAll('g')
+                
+            graphContainer.append('div')
+                .text(name)
+        }
+
+        function drawClusterLayout() {
+            const clusterLayout = d3.cluster().size([400, 200])( root )
+            d3.select('#cluster-layout g')
+                .selectAll('g')
+                .data(['links', 'nodes'])
+                .enter()
+                .append('g')
+                .attr('class', cls => cls)
+            drawNodesOfGraph('cluster-layout')
+            drawLinksOfGraph('cluster-layout')
+        }
+
+        function drawNodesOfGraph(id) {
+            d3.select(`#${ id } .nodes`)
+                .selectAll('.node-wrapper')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-wrapper')
+                .call(addNode)
+                .call(addText)
+        }
+
+        function drawLinksOfGraph(id) {
+            d3.select(`#${ id } .links`)
+                .selectAll('.link')
+                .data(root.links())
+                .enter()
+                .append('line')
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y)
+                .attr('stroke', config.lineStroke)
+        }
+
+        // add one node of cluster-layout.
+        function addNode(nodes) {
+            nodes.append('circle')
+                .attr('class', 'node')
+                .attr('r', config.nodeRadius)
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('fill', config.bgOfNode)
+        }
+
+        // add text of one node.
+        function addText(nodes) {
+            nodes.append('text')
+                .text(d => d.data.name)
+                .attr('text-anchor', 'middle')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 4)
+        }
+
+        function drawTreeLayout() {
+            d3.tree().size([400, 200])(root)
+            d3.select('#tree-layout g')
+                .selectAll('g')
+                .data(['links', 'nodes'])
+                .enter()
+                .append('g')
+                .attr('class', cls => cls)
+
+            drawNodesOfGraph('tree-layout')
+            drawLinksOfGraph('tree-layout')
+        }
+
+        function drawTreeMapLayout() {
+            d3.treemap()
+                .paddingOuter(20)
+                .size(config.graphSize)(root)
+
+            const nodes = d3.select('#treemap-layout g')
+                .selectAll('rect')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-wrapper')
+                .attr('transform', d => `translate(${ d.x0 },${ d.y0 })`)
+
+            nodes.append('rect')
+                .attr('class', 'node')
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', config.treeMapBg)
+                .style('stroke', config.treeMapStroke )
+            
+            nodes.append('text')
+                .text(d => d.data.name)
+                .attr('x', d => 12)
+                .attr('y', d => 16)
+        }
+
+        // 分区图
+        function drawPartitionLayout() {
+            d3.partition()
+                .size(config.graphSize)
+                .padding(5)
+                (root)
+
+            const nodes = d3.select('#partition-layout g')
+                .selectAll('g')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-wrapper')
+                .attr('transform', d => `translate(${ d.x0 },${ d.y0 })`)
+
+            nodes.append('rect')
+                .attr('class', 'node')
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', config.treeMapBg)
+                .attr('fill', config.treeMapBg)
+                .style('stroke', config.treeMapStroke )
+
+            nodes.append('text')
+                .text(d => d.data.name)
+                .attr('dx', 6)
+                .attr('dy', 16)
+        }
+
+        // 旭日图
+        function drawSunburstLayout() {
+            d3.partition().size([
+                2 * Math.PI, // 弧度
+                100 // 半径
+            ])(root)
+
+            const arc = d3.arc()
+                .startAngle(d => d.x0)
+                .endAngle(d => d.x1)
+                .innerRadius(d => d.y0)
+                .outerRadius(d => d.y1)
+
+            const nodes = d3.select('#sunburst-layout g')
+                .selectAll('g')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-wrapper')
+                .attr('transform', 'translate(190, 90)')
+
+            nodes.append('path')
+                .attr('d', arc)
+                .attr('class', 'node')
+                .attr('fill', config.treeMapBg)
+                .attr('stroke', config.treeMapStroke)
+            
+            nodes.append('text')
+                .text(d => d.data.name)
+                .attr('transform', d => `translate(${ arc.centroid(d) })`)
+                .attr('dx', '-8')
+                .attr('dy', '4')
+
+        }
+
+        // 打包图
+        function drawPackLayout() {
+            // d3.packEnclose(circles) 计算包裹一组圆的最小圆
+
+            d3.pack()
+                // .radius(d => 20) 指定具体的radius
+                .padding(10) // 圆与圆之间的间距,default:0
+                .size(config.graphSize)
+                (root)
+            const nodes = d3.select('#pack-layout g')
+                .selectAll('circle')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-wrapper')
+                .attr('transform', d => `translate(${ d.x },${ d.y })`)
+
+            nodes.append('circle')
+                .attr('class', 'node')
+                .attr('r', d => d.r)
+                .attr('fill', config.treeMapBg)
+                .attr('stroke', config.treeMapStroke)
+            
+            nodes.append('text')
+                .text(d => d.children === void 0 ? d.data.name : '')
+                .attr('text-anchor', 'middle')
+                .attr('dy', 4)
+        }
+
+        function setNodeStyle(nodeWrapper, {
+            fill,
+            color
+        }) {
+            nodeWrapper
+                .select('text')
+                .transition()
+                .duration(700)
+                .attr('fill', color)
+
+            nodeWrapper
+                .select('.node')
+                .transition()
+                .duration(400)
+                .attr('fill', fill)
+        }
+
+        function bindMouseOverEvt() {
+            d3.selectAll('.graph g.node-wrapper')
+                .on('mouseover', function () {
+                    const nodeWrapper = d3.select(this)
+                    setNodeStyle(nodeWrapper, {
+                        fill: config.mouseOverBg,
+                        color: '#fff'
+                    })
+                })
+                .on('mouseout', function (d) {
+                    const nodeWrapper = d3.select(this)
+                    setNodeStyle(nodeWrapper, {
+                        fill: config.treeMapBg,
+                        color: '#000'
+                    })
+                })
+        }
+    </script>
+</body>
+</html>
