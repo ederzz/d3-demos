@@ -16,4 +16,4 @@ D3.js-demos.
 - [radial-bar-chart 极坐标系柱状图](https://shenyiling.github.io/d3-demos/demo14-radial-bar-chart.html)
 - [d3.drag](https://shenyiling.github.io/d3-demos/demo15-drag.html)
 - [drag-to-re-arrange](https://shenyiling.github.io/d3-demos/demo16-drag-re-arrange.html)
-- [d3-hierarchy](https://shenyiling.github.io/d3-demos/demo17-hierarchy.html)
+- [d3-hierarchy(树状图、树图，矩阵树图、分区图、旭日图、打包图)](https://shenyiling.github.io/d3-demos/demo17-hierarchy.html)
