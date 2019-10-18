@@ -71,7 +71,7 @@
         const root = d3.hierarchy(data)
         root.sum(d => d.value)
 
-        const graphLayouts = [ 'cluster', 'tree', 'treemap', 'partition', 'sunburst', 'pack', 'tree2' ]
+        const graphLayouts = [ 'cluster', 'tree', 'treemap', 'partition', 'sunburst', 'pack', 'tree2', 'radial-cluster' ]
         graphLayouts.forEach( addGraph )
 
         drawClusterLayout()
@@ -81,6 +81,7 @@
         drawSunburstLayout()
         drawPackLayout()
         drawTreeLayout2()
+        drawRadialClusterLayout()
         bindMouseOverEvt()
 
         // create graphs.
@@ -360,7 +361,6 @@
                 .attr('transform', d => `translate(${node.x0}, ${node.y0})`)
                 .call(addNode)
                 .call(addText)
-            console.log(node.x0, node.y0)
 
             // 更新节点新位置
             nodes.merge(nodesEnter)
@@ -424,6 +424,46 @@
                 d.x0 = d.x
                 d.y0 = d.y
             })
+        }
+
+        function drawRadialClusterLayout() {
+            const clusterLayout = d3.cluster().size([2 * Math.PI, 90])( root )
+            d3.select('#radial-cluster-layout g')
+                .attr('transform', 'translate(200, 110)')
+                .selectAll('g')
+                .data(['links', 'nodes'])
+                .enter()
+                .append('g')
+                .attr('class', cls => cls)
+            const nodes = d3.select('#radial-cluster-layout .nodes')
+                .selectAll('node-wrapper')
+                .data(root.descendants())
+                .enter()
+                .append('g')
+                .attr('transform', d => {
+                    // 0 指向水平线
+                    const x = Math.sin(d.x - Math.PI / 2) * d.y
+                    const y = Math.cos(d.x - Math.PI / 2) * d.y
+                    return `translate(${ y }, ${ x })`
+                })
+                // .attr('transform', d => `
+                //     rotate(${d.x * 180 / Math.PI - 90})
+                //     translate(${d.y},0)
+                // `)
+            
+            nodes.append('circle')
+                .attr('r', 5)
+                .attr('fill', config.treeMapBg)
+            
+            const link = d3.linkRadial().angle(d => d.x).radius(d => d.y)
+            d3.select('#radial-cluster-layout .links')
+                .selectAll('node-wrapper')
+                .data(root.links())
+                .enter()
+                .append('path')
+                .attr('d', link)
+                .attr('fill', 'none')
+                .attr('stroke', config.lineStroke)
         }
     </script>
 </body>
