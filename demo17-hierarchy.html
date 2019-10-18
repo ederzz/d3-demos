@@ -71,7 +71,7 @@
         const root = d3.hierarchy(data)
         root.sum(d => d.value)
 
-        const graphLayouts = [ 'cluster', 'tree', 'treemap', 'partition', 'sunburst', 'pack' ]
+        const graphLayouts = [ 'cluster', 'tree', 'treemap', 'partition', 'sunburst', 'pack', 'tree2' ]
         graphLayouts.forEach( addGraph )
 
         drawClusterLayout()
@@ -80,6 +80,7 @@
         drawPartitionLayout()
         drawSunburstLayout()
         drawPackLayout()
+        drawTreeLayout2()
         bindMouseOverEvt()
 
         // create graphs.
@@ -325,6 +326,28 @@
                         color: '#000'
                     })
                 })
+        }
+
+        function drawTreeLayout2() {
+            d3.tree().size([400, 200])(root)
+            d3.select('#tree2-layout g')
+                .selectAll('g')
+                .data(['links', 'nodes'])
+                .enter()
+                .append('g')
+                .attr('class', cls => cls)
+            drawNodesOfGraph('tree2-layout')
+
+            const linkPath = d3.linkVertical().x(d => d.x).y(d => d.y)
+            d3.select('#tree2-layout .links')
+                .selectAll('.link')
+                .data(root.links())
+                .enter()
+                .append('path')
+                .attr('fill', 'none')
+                .attr('stroke', config.lineStroke)
+                .attr('stroke-width', 1.5)
+                .attr('d', d => linkPath(d))
         }
     </script>
 </body>
