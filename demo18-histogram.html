@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta charset="utf-8">
+    <title>Document</title>
+    <style>
+        #chart-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-wrapper"></div>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+        const width = 600
+        const height = 400
+        const margin = {
+            top: 10,
+            bottom: 30,
+            left: 60,
+            right: 60
+        }
+
+        const svg = d3.select('#chart-wrapper')
+            .append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            .append('g')
+            .attr('transform', `translate(${ margin.left }, ${ margin.top })`)
+
+        d3.csv('./mock/histogram.csv')
+            .then(data => {
+                const max = 1000
+                const histogram = d3.histogram()
+                    .value(d => +d.price)
+                    .domain([ 0, max ])
+                const bins = histogram( data )
+
+                const x = d3.scaleLinear()
+                    .domain([0, max ])
+                    .range([0, width])
+                
+                const y = d3.scaleLinear()
+                    .domain([0, d3.max(bins, d => d.length)])
+                    .range([height, 0])
+
+                svg.append('g')
+                    .attr('transform', `translate(0, ${ height })`)
+                    .call(d3.axisBottom(x))
+
+                svg.append('g')
+                    .call(d3.axisLeft(y))
+
+                svg.append('g')
+                    .selectAll('rect')
+                    .data(bins)
+                    .enter()
+                    .append('g')
+                    .append('rect')
+                    .attr('x', d => x(d.x0) + 1 )
+                    .attr('y', d => y(d.length) )
+                    .attr('width', d => x(d.x1) - x(d.x0) - 1)
+                    .attr('height', d => height - y(d.length))
+                    .attr('fill', '#69b3a2')
+            })
+    </script>
+</body>
+
+</html>
