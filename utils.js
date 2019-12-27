@@ -50,3 +50,14 @@ function createSvg(w = window.innerWidth, h = window.innerHeight) {
         .append('g')
         .attr('transform', `translate(${ w / 2 }, ${ h / 2 })`)
 }
+
+// 转换弧度值为角度
+function tsRadian2angle(radian) {
+    return radian * 180 / Math.PI
+}
+
+function setAttr(ele, attrs) {
+    for (const [key, val] of Object.entries(attrs)) {
+        ele.attr(key, val)
+    }
+}

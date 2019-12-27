@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        svg {
+            border: 1px solid red;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chart">
+    </div>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./utils.js"></script>
+    <script>
+        // 弦图
+        const width = 800
+        const height = 600
+        const svg = createSvg(width, height)
+        const outerR = Math.min(width, height) / 2 - 100
+        const innerR = outerR - 10
+        const padAngle = 2 * Math.PI / 20
+        const city_name = [ "北京市总人口" , "上海市总人口" , "广州市总人口" , "深圳市总人口" , "香港市总人口"  ];
+        const population = [
+            [ 10,  20 , 20 , 30 , 40 ], // 北京市 对应5个城市的人口流动
+            [ 5,  15 , 55 , 10  , 10 ],
+            [ 20,  5 , 80 , 5 , 5  ],
+            [ 10,  20 , 20 , 30 , 40 ],
+            [ 5,  15 , 55 , 10  , 0 ]
+        ]
+
+        const chords = d3.chord()
+            .padAngle(padAngle)
+            (population)
+            
+        const groups = chords.groups
+        console.log(chords)
+        const arc = d3.arc()
+            .innerRadius(innerR)
+            .outerRadius(outerR)
+            // .padAngle(padAngle)
+
+        svg.append('g')
+            .attr('class', 'groups')
+            .selectAll('path')
+            .data(groups)
+            .enter()
+            .append('path')
+            .attr('d', d => {
+                console.log(arc(d))
+                return arc(d)
+            })
+            .attr('fill', (_, i) => d3.interpolateGreens(i / 10 + .1))
+
+        svg.append('g')
+            .selectAll('text')
+            .data(groups)
+            .enter()
+            .append('g')
+            .call(setAttr, {
+                fill: 'green',
+                transform: d => {
+                    const deg = rotateAngle(d)
+                    return `
+                        rotate(${ deg - 90 })
+                        translate(${ outerR }, 0)
+                    `
+                }
+            })
+            .append('text')
+            .text((_, i) => city_name[i])
+            .call(setAttr, {
+                transform: function (d) {
+                    const deg = rotateAngle(d)
+
+                    return deg > 180
+                        ? `
+                            rotate(180)
+                            translate(${ -this.getBBox().width }, 0)
+                        `
+                        : ''
+                }
+            })
+        
+        const ribbon = d3.ribbon()
+            .radius(innerR)
+        
+        svg.append('g')
+            .attr('class', 'chord')
+            .selectAll('path')
+            .data(chords)
+            .enter()
+            .append('path')
+            .attr('d', ribbon)
+            .attr('fill', (_, i) => d3.interpolatePurples(i / 10))
+            .on('mouseover', function (_, i) {
+                d3.select(this)
+                    .attr('fill', d3.interpolatePurples(i / 10 + .1), 20)
+            })
+            .on('mouseout', function (_, i) {
+                d3.select(this)
+                    .attr('fill', d3.interpolatePurples(i / 10))
+            })
+
+        // 文本旋转角度
+        function rotateAngle(d) {
+            return tsRadian2angle( (d.startAngle + d.endAngle + padAngle) / 2 )
+        }
+    </script>
+
+</body>
+
+
+</html>
