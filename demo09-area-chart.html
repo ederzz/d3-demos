@@ -15,8 +15,8 @@
         }
 
         #area-chart-wrapper {
-            width: 80vw;
-            height: 80vh;
+            width: 60vw;
+            height: 40vh;
             margin: auto;
         }
     </style>
@@ -47,11 +47,22 @@
             left: 40
         }
 
+        svg.append('g')
+            .html(`
+                <defs>
+                    <linearGradient id="linear" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%"   stop-color="#7a56e4"/>
+                        <stop offset="100%" stop-color="#73d7de"/>
+                    </linearGradient>
+                </defs>
+            `)
+
         const {
             xScale,
             yScale
         } = setXyScale(data)
         const area = d3.area()
+            .curve(d3.curveBasis)
             .x(d => xScale(d.date))
             .y1(d => yScale(d.value))
             .y0(yScale(0))
@@ -88,6 +99,7 @@
                 .datum(data)
                 .attr('fill', 'steelblue')
                 .attr('d', area)
+                .attr('fill', 'url(#linear)')
         }
     </script>
 </body>
