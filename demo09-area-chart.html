@@ -37,6 +37,8 @@
             .append('svg')
             .attr('width', width)
             .attr('height', height)
+        const lineWrapper = svg.append('g')
+            .attr('class', 'line-wrapper')
         const areaWrapper = svg.append('g')
             .attr('class', 'area-wrapper')
         
@@ -49,28 +51,34 @@
 
         svg.append('g')
             .html(`
-                <defs>
-                    <linearGradient id="linear" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%"   stop-color="#7a56e4"/>
-                        <stop offset="100%" stop-color="#73d7de"/>
-                    </linearGradient>
-                </defs>
+                <linearGradient 
+                    id="area-gradient" 
+                    class="area-gradient" 
+                    gradientUnits="userSpaceOnUse" 
+                    x1="0" x2="598" y1="0" y2="0"
+                >
+                    <stop offset="0%" stop-color="#F5FDFF"></stop>
+                    <stop offset="100%" stop-color="#F6FEFC"></stop>
+                </linearGradient>
+                <linearGradient 
+                    id="line-gradient" 
+                    class="line-gradient" 
+                    gradientUnits="userSpaceOnUse" 
+                    x1="0" x2="598" y1="0" y2="0"
+                >
+                    <stop offset="0%" stop-color="#39C7EA"></stop>
+                    <stop offset="100%" stop-color="#4CDCBA"></stop>
+                </linearGradient>
             `)
 
         const {
             xScale,
             yScale
         } = setXyScale(data)
-        const area = d3.area()
-            .curve(d3.curveBasis)
-            .x(d => xScale(d.date))
-            .y1(d => yScale(d.value))
-            .y0(yScale(0))
             
-        const xAxis = d3.axisBottom(xScale)
-        const yAxis = d3.axisLeft(yScale)
-
-        drawChart()
+        drawAxis()
+        drawLine()
+        drawArea()
 
         function setXyScale(data) {
             const xScale = d3.scaleTime()
@@ -87,19 +95,45 @@
             }
         }
 
-        function drawChart() {
+        function drawAxis() {
+            const xAxis = d3.axisBottom(xScale)
+            const yAxis = d3.axisLeft(yScale)
+
             svg.append('g')
                 .call(xAxis)
                 .attr('transform', `translate(0, ${height - margin.bottom})`)
             svg.append('g')
                 .call(yAxis)
                 .attr('transform', `translate(${margin.left})`)
-            
+        }
+
+        function drawArea() {
+            const area = d3.area()
+                .curve(d3.curveBasis)
+                .x(d => xScale(d.date))
+                .y1(d => yScale(d.value))
+                .y0(yScale(0))
+
             areaWrapper.append('path')
                 .datum(data)
                 .attr('fill', 'steelblue')
                 .attr('d', area)
-                .attr('fill', 'url(#linear)')
+                .attr('fill', 'url(#area-gradient)')
+        }
+
+        function drawLine() {
+            const line = d3.line()
+                .curve(d3.curveBasis)
+                .x(d => xScale(d.date))
+                .y(d => yScale(d.value))
+            
+            lineWrapper.append('path')
+                .attr('class', 'line')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', 'url(#line-gradient)')
+                .attr('stroke-width', '4px')
+                .attr('d', line)
         }
     </script>
 </body>

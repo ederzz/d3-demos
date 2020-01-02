@@ -61,3 +61,20 @@ function setAttr(ele, attrs) {
         ele.attr(key, val)
     }
 }
+
+function buildGradient(id, data) {
+    linearGradient = svg.select('gradient-wrapper')
+        .append('linearGradient')
+        .attr('id', id)
+        .attr('x1', '0%')
+        .attr('y1', '0%')
+        .attr('x2', '100%')
+        .attr('y2', '0%')
+        .attr('gradientUnits', 'userSpaceOnUse')
+        .selectAll('stop')
+        .data(data)
+        .enter()
+        .append('stop')
+        .attr('offset', ({ offset }) => offset)
+        .attr('stop-color', ({ color }) => color)
+}
