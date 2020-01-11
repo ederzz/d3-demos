@@ -18,3 +18,4 @@ D3.js-demos.
 - [drag-to-re-arrange](https://shenyiling.github.io/d3-demos/demo16-drag-re-arrange.html)
 - [d3-hierarchy(树状图、树图，矩阵树图、分区图、旭日图、打包图)](https://shenyiling.github.io/d3-demos/demo17-hierarchy.html)
 - [d3-histogram 直方图](https://shenyiling.github.io/d3-demos/demo18-histogram.html)
+- [d3-弦图](https://shenyiling.github.io/d3-demos/chord-chart.html)

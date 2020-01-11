@@ -78,3 +78,31 @@ function buildGradient(id, data) {
         .attr('offset', ({ offset }) => offset)
         .attr('stop-color', ({ color }) => color)
 }
+
+// 创建径向标签
+function createRadialTicks(tick) {
+    tick.call(setAttr, {
+        transform: d => {
+            const deg = tsRadian2angle(d.angle)
+
+            return `
+                rotate(${ deg - 90 })
+                translate(${ outerR }, 1)
+            `
+        },
+        'text-anchor': 'start',
+        'dominant-baseline': 'middle',
+        'stroke-width': 1,
+        'font-size': 10,
+        'font-weight': 100,
+    })
+    .call(g => {
+        g.append('line')
+            .attr('stroke', '#000')
+            .attr('x2', 6)
+
+        g.append('text')
+            .text(d => d.text)
+            .attr('transform', 'translate(8, 0)')
+    })
+}
