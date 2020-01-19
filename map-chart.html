@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        svg {
+            background-color: rgb(34, 34, 34);
+            box-shadow: 0 0 10px 0 rgba(0, 0, 0, .3);
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="./utils.js"></script>
+    <script>
+        const width = 600
+        const height = 600
+
+        const projection = d3.geoMercator()
+            .scale(120)
+            .translate([width / 2, height / 2])
+
+        const path = d3.geoPath()
+            .projection( projection )
+        
+        const zoom = d3.zoom()
+            .scaleExtent([1, 8])
+            .on('zoom', handleZoom)
+
+        function handleZoom() {
+            const {
+                transform
+            } = d3.event
+
+            svg.attr('transform', transform)
+        }
+
+        let svg = d3.select('body')
+            .append('svg')
+            .call(setAttr, {
+                width,
+                height
+            })
+            .call(zoom)
+        svg = svg.append('g')
+
+        d3.json('./mock/worldmap.geojson')
+            .then(data => {
+                svg.append('path')
+                    .datum(data)
+                    .call(setAttr, {
+                        d: path,
+                        fill: '#555',
+                        stroke: 'rgb(34, 34, 34)'
+                    })
+            })
+    </script>
+
+</body>
+
+
+</html>
